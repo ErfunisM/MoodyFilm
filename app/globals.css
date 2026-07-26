@@ -175,19 +175,31 @@ body::before {
 
 .brand-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 
 .brand {
   margin: 0;
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(3rem, 10vw, 4.5rem);
-  letter-spacing: 0.04em;
-  line-height: 0.95;
+  height: clamp(3rem, 10vw, 4.5rem);
+  aspect-ratio: 762 / 242;
   color: var(--cream);
   animation: brand-in 0.7s ease-out both;
+}
+
+.brand-image {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left top;
+}
+
+html[data-theme="light"] .brand-image--light,
+html[data-theme="dark"] .brand-image--dark,
+:root:not([data-theme]) .brand-image--dark {
+  display: block;
 }
 
 .header-controls {
