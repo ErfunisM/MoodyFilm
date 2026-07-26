@@ -43,6 +43,9 @@ interface TmdbSearchResponse {
 interface TmdbMovieDetails {
   runtime?: number | null;
   genres?: Array<{ id: number; name: string }>;
+  credits?: {
+    crew?: Array<{ job?: string; name?: string }>;
+  };
 }
 
 function scoreMatch(candidate: TmdbSearchResult, movie: AiMovie): number {
@@ -105,6 +108,7 @@ async function searchMovie(
 }
 
 interface TmdbDetails {
+  director: string | null;
   runtime: number | null;
   genres: string[];
 }
@@ -115,15 +119,19 @@ async function fetchDetails(
 ): Promise<TmdbDetails> {
   const url = new URL(`${TMDB_BASE}/movie/${tmdbId}`);
   url.searchParams.set("api_key", apiKey);
+  url.searchParams.set("append_to_response", "credits");
 
   const response = await fetch(url.toString(), { next: { revalidate: 3600 } });
-  if (!response.ok) return { runtime: null, genres: [] };
+  if (!response.ok) return { director: null, runtime: null, genres: [] };
 
   const data = (await response.json()) as TmdbMovieDetails;
+  const director =
+    data.credits?.crew?.find((member) => member.job === "Director")?.name ??
+    null;
   const runtime =
     typeof data.runtime === "number" && data.runtime > 0 ? data.runtime : null;
   const genres = (data.genres ?? []).map((g) => g.name);
-  return { runtime, genres };
+  return { director, runtime, genres };
 }
 
 export async function enrichMovies(
@@ -151,6 +159,7 @@ export async function enrichMovies(
             posterUrl: null,
             overview: null,
             overviewFa: null,
+            director: null,
             runtime: null,
             voteAverage: null,
             genres: [],
@@ -180,6 +189,7 @@ export async function enrichMovies(
             : null,
           overview: enMatch.overview || null,
           overviewFa,
+          director: details.director,
           runtime: details.runtime,
           voteAverage:
             typeof enMatch.vote_average === "number" ? enMatch.vote_average : null,
@@ -192,6 +202,7 @@ export async function enrichMovies(
           posterUrl: null,
           overview: null,
           overviewFa: null,
+          director: null,
           runtime: null,
           voteAverage: null,
           genres: [],

@@ -15,7 +15,7 @@ import { StoryStep } from "@/components/wizard/StoryStep";
 import { WatchTimeStep } from "@/components/wizard/WatchTimeStep";
 import { WeatherStep } from "@/components/wizard/WeatherStep";
 import { isAgeInappropriate } from "@/lib/ageCheck";
-import { getWatchedMovies, getWatchedTitles } from "@/lib/watchedMovies";
+import { getWatchedMovies } from "@/lib/watchedMovies";
 import type {
   Company,
   Gender,
@@ -128,7 +128,7 @@ export function Wizard() {
     setError(null);
 
     try {
-    const currentWatched = getWatchedMovies();
+      const currentWatched = getWatchedMovies();
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,7 +170,7 @@ export function Wizard() {
       setResultsTab("new");
       
       // Check if movies are age-inappropriate
-      if (isAgeInappropriate(data.age, json.movies, data.story, data.mood)) {
+      if (isAgeInappropriate(data.age, json.movies, data.story)) {
         setShowAgeWarning(true);
       }
       
@@ -373,27 +373,14 @@ export function Wizard() {
 
             <div className="wizard-nav-end">
               {showStoryActions ? (
-                <>
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={() => {
-                      patchData({ story: "" });
-                      submitRecommendations();
-                    }}
-                    disabled={loading}
-                  >
-                    {t.skip}
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-btn"
-                    onClick={submitRecommendations}
-                    disabled={loading}
-                  >
-                    {loading ? t.findingFilms : t.finish}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={submitRecommendations}
+                  disabled={loading}
+                >
+                  {t.finish}
+                </button>
               ) : null}
 
               {showAgeNext ? (
@@ -430,6 +417,19 @@ export function Wizard() {
           onGoBack={restart}
         />
       )}
+
+      {loading ? (
+        <div className="recommend-loading-overlay" role="status" aria-live="polite">
+          <div className="recommend-loading-card">
+            <div className="recommend-loading-icon" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
+            <p>{t.findingBestMovie}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

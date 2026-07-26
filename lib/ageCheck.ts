@@ -1,4 +1,4 @@
-import type { Mood, SuggestedMovie } from "./types";
+import type { SuggestedMovie } from "./types";
 
 // Explicit genres that require warning for age <= 15
 const EXPLICIT_INAPPROPRIATE_GENRES = ["horror", "erotic"];
@@ -43,7 +43,6 @@ export function isAgeInappropriate(
   age: number | null,
   movies: SuggestedMovie[] = [],
   story: string = "",
-  mood?: Mood | null,
 ): boolean {
   // Only applicable to viewers aged 15 and below
   if (age === null || age > 15) {

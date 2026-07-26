@@ -34,17 +34,11 @@ function applyDocumentLocale(locale: Locale) {
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
-
-  useEffect(() => {
+  const [locale, setLocaleState] = useState<Locale>(() => {
+    if (typeof window === "undefined") return DEFAULT_LOCALE;
     const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (stored === "fa" || stored === "en") {
-      setLocaleState(stored);
-      applyDocumentLocale(stored);
-      return;
-    }
-    applyDocumentLocale(DEFAULT_LOCALE);
-  }, []);
+    return stored === "fa" || stored === "en" ? stored : DEFAULT_LOCALE;
+  });
 
   useEffect(() => {
     applyDocumentLocale(locale);

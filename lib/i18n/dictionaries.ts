@@ -68,6 +68,7 @@ export type Dictionary = {
   partner: string;
   colleagues: string;
   findingFilms: string;
+  findingBestMovie: string;
   findMyMovies: string;
   suggestionOf: string;
   startOver: string;
@@ -86,6 +87,11 @@ export type Dictionary = {
   newResults: string;
   watchedResults: string;
   moviePosterAlt: string;
+  director: string;
+  releaseYear: string;
+  runtime: string;
+  runtimeValue: string;
+  unknownValue: string;
   langFa: string;
   langEn: string;
   theme: string;
@@ -164,6 +170,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     partner: "پارتنر",
     colleagues: "همکاران",
     findingFilms: "در حال پیدا کردن فیلم‌ها…",
+    findingBestMovie: "در حال پیدا کردن فیلم مناسب شما",
     findMyMovies: "پیدا کردن فیلم‌ها",
     suggestionOf: "پیشنهاد {current} از {total}",
     startOver: "شروع دوباره",
@@ -183,6 +190,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     newResults: "نتایج جدید",
     watchedResults: "فیلم‌هایی که دیدی",
     moviePosterAlt: "پوستر {title}",
+    director: "کارگردان",
+    releaseYear: "سال انتشار",
+    runtime: "مدت زمان",
+    runtimeValue: "{minutes} دقیقه",
+    unknownValue: "نامشخص",
     langFa: "فارسی",
     langEn: "English",
     theme: "تم",
@@ -285,6 +297,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     partner: "Partner",
     colleagues: "Colleagues",
     findingFilms: "Finding films…",
+    findingBestMovie: "Finding the right movie for you",
     findMyMovies: "Find my movies",
     suggestionOf: "Suggestion {current} of {total}",
     startOver: "Start over",
@@ -304,6 +317,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     newResults: "New picks",
     watchedResults: "Movies you've seen",
     moviePosterAlt: "{title} poster",
+    director: "Director",
+    releaseYear: "Release year",
+    runtime: "Runtime",
+    runtimeValue: "{minutes} min",
+    unknownValue: "Unknown",
     langFa: "فارسی",
     langEn: "English",
     theme: "Theme",

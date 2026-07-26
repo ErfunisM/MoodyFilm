@@ -29,17 +29,11 @@ function applyDocumentTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
-
-  useEffect(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return DEFAULT_THEME;
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === "dark" || stored === "light") {
-      setThemeState(stored);
-      applyDocumentTheme(stored);
-      return;
-    }
-    applyDocumentTheme(DEFAULT_THEME);
-  }, []);
+    return stored === "dark" || stored === "light" ? stored : DEFAULT_THEME;
+  });
 
   useEffect(() => {
     applyDocumentTheme(theme);

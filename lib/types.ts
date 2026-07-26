@@ -59,6 +59,7 @@ export interface AiMovie {
 export interface SuggestedMovie extends AiMovie {
   tmdbId: number | null;
   posterUrl: string | null;
+  director: string | null;
   overview: string | null;
   overviewFa: string | null;
   runtime: number | null;

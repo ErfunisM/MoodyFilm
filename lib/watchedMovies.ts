@@ -9,6 +9,7 @@ export interface WatchedMovie {
   posterUrl: string | null;
   overview: string | null;
   overviewFa: string | null;
+  director: string | null;
   runtime: number | null;
   reason: string;
   genres: string[];
@@ -42,6 +43,7 @@ export function addWatchedMovie(movie: SuggestedMovie): void {
     posterUrl: movie.posterUrl,
     overview: movie.overview,
     overviewFa: movie.overviewFa,
+    director: movie.director,
     runtime: movie.runtime,
     reason: movie.reason,
     genres: Array.isArray(movie.genres) ? movie.genres : [],
