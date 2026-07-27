@@ -15,8 +15,6 @@ import type {
 const GENDERS: Gender[] = [
   "female",
   "male",
-  "non-binary",
-  "prefer-not-to-say",
 ];
 const MOODS: Mood[] = [
   "happy",

@@ -1,4 +1,4 @@
-export type Gender = "female" | "male" | "non-binary" | "prefer-not-to-say";
+export type Gender = "female" | "male";
 
 export type Mood =
   | "happy"

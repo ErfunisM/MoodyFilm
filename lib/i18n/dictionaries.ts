@@ -9,8 +9,6 @@ export type Dictionary = {
   gender: string;
   female: string;
   male: string;
-  nonBinary: string;
-  preferNotToSay: string;
   age: string;
   agePlaceholder: string;
   location: string;
@@ -110,8 +108,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     gender: "جنسیت",
     female: "زن",
     male: "مرد",
-    nonBinary: "غیردوگانه",
-    preferNotToSay: "ترجیح می‌دهم نگویم",
     age: "سن",
     agePlaceholder: "مثلاً ۲۸",
     location: "موقعیت",
@@ -237,8 +233,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     gender: "Gender",
     female: "Female",
     male: "Male",
-    nonBinary: "Non-binary",
-    preferNotToSay: "Prefer not to say",
     age: "Age",
     agePlaceholder: "e.g. 28",
     location: "Location",

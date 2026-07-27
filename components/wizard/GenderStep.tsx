@@ -14,8 +14,6 @@ export function GenderStep({ data, onSelect }: GenderStepProps) {
   const genders: { value: Gender; label: string }[] = [
     { value: "female", label: t.female },
     { value: "male", label: t.male },
-    { value: "non-binary", label: t.nonBinary },
-    { value: "prefer-not-to-say", label: t.preferNotToSay },
   ];
 
   return (
