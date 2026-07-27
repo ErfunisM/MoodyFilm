@@ -2,23 +2,18 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react";
 
-export type Theme = "dark" | "light";
+export type Theme = "dark";
 
 export const DEFAULT_THEME: Theme = "dark";
-export const THEME_STORAGE_KEY = "filmchi-theme";
 
 type ThemeContextValue = {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -29,29 +24,11 @@ function applyDocumentTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return DEFAULT_THEME;
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return stored === "dark" || stored === "light" ? stored : DEFAULT_THEME;
-  });
-
   useEffect(() => {
-    applyDocumentTheme(theme);
-  }, [theme]);
-
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    applyDocumentTheme(DEFAULT_THEME);
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [setTheme, theme]);
-
-  const value = useMemo(
-    () => ({ theme, setTheme, toggleTheme }),
-    [theme, setTheme, toggleTheme],
-  );
+  const value = useMemo(() => ({ theme: DEFAULT_THEME }), []);
 
   return (
     <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { LocaleToggler } from "@/components/LocaleToggler";
-import { ThemeToggler } from "@/components/ThemeToggler";
 import { MovieCard } from "@/components/MovieCard";
 import { useLocale } from "@/components/LocaleProvider";
 import { AgeStep } from "@/components/wizard/AgeStep";
@@ -226,15 +225,7 @@ export function Wizard() {
         <div className="brand-row">
           <div className="brand" aria-label="FilmChi">
             <Image
-              className="brand-image brand-image--light"
-              src="/FilmChi-Light.png"
-              alt="FilmChi"
-              width={762}
-              height={242}
-              priority
-            />
-            <Image
-              className="brand-image brand-image--dark"
+              className="brand-image"
               src="/FilmChi-Dark.png"
               alt="FilmChi"
               width={764}
@@ -243,7 +234,6 @@ export function Wizard() {
             />
           </div>
           <div className="header-controls">
-            <ThemeToggler />
             <LocaleToggler />
           </div>
         </div>
