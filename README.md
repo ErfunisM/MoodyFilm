@@ -12,4 +12,4 @@ Features
 - **Light & dark themes** — comfortable viewing in any environment
 - **One-at-a-time reveal** — browse five suggestions at your own pace with next and restart controls
 
-[Live Demo]([https://pharmacymanagementpanel-8rf09d3yw-erfunism75-4329s-projects.vercel.app](https://filmchi-eight.vercel.app/)/)
+[Live Demo](https://filmchi-eight.vercel.app/)
