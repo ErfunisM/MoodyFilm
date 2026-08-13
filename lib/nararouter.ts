@@ -1,59 +1,6 @@
-import type { AiMovie, CandidateWatchedMovie, RecommendRequest } from "./types";
+import type { CandidateWatchedMovie, RecommendRequest } from "./types.ts";
 
 const NARAROUTER_URL = "https://router.bynara.id/v1/chat/completions";
-
-function buildPrompt(data: RecommendRequest): string {
-  const location =
-    data.locationLabel ||
-    [data.city, data.country].filter(Boolean).join(", ") ||
-    "unspecified";
-
-  const isFarsi = data.locale === "fa";
-
-  const reasonInstruction = isFarsi
-    ? 'یک جمله کوتاه به زبان فارسی که توضیح می‌دهد چرا این فیلم مناسب است'
-    : "One short sentence in English explaining why this fits";
-
-  const seenSection =
-    data.seenTitles && data.seenTitles.length > 0
-      ? `\n- Movies already seen (DO NOT suggest these): ${data.seenTitles.join(", ")}`
-      : "";
-
-  const storyHint = data.story?.trim();
-  const hasSpecificRequest = storyHint && storyHint.length > 5;
-
-  return `You are a movie recommendation expert. Suggest between 1 and 5 movies based on this viewer profile.
-
-Viewer profile:
-- Gender: ${data.gender}
-- Age: ${data.age}
-- Location: ${location}
-- Current mood: ${data.mood}
-- Mood/story details: ${storyHint || "none provided"}
-- Preferred watch time: ${data.watchTime}
-- Watching with: ${data.company}${seenSection}
-
-Rules:
-- Prefer movies with IMDb rating of 7.0 or higher. If the request is very specific (e.g. a particular actor, director, or niche genre), you may include movies with IMDb rating as low as 6.5 — but only if they genuinely fit.
-- Prefer well-known, widely available films
-- Match the mood, company, time of day, and the story/theme details closely
-- If the viewer requests a specific actor, director, or theme: prioritize those over generic suggestions
-- Return ONLY valid JSON, no markdown, no commentary
-- Return as many movies as you can (up to 5). If you can only find 1-4 strong matches, return those — do NOT pad the list with irrelevant movies just to reach 5
-- The "reason" field must be: ${reasonInstruction}
-- Schema:
-{
-  "movies": [
-    {
-      "title": "Movie Title",
-      "year": 2010,
-      "imdbRating": 8.1,
-      "reason": "..."
-    }
-  ]
-}
-Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest ? "\n\nIMPORTANT: The viewer has a specific request in the story details. Honor it strictly." : ""}`;
-}
 
 function extractJson(text: string): unknown {
   const trimmed = text.trim();
@@ -66,48 +13,6 @@ function extractJson(text: string): unknown {
   }
 }
 
-function normalizeMovies(payload: unknown): AiMovie[] {
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Invalid NaraRouter payload");
-  }
-
-  const movies = (payload as { movies?: unknown }).movies;
-  if (!Array.isArray(movies)) {
-    throw new Error("NaraRouter response missing movies array");
-  }
-
-  const normalized = movies
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const movie = item as Record<string, unknown>;
-      const title = String(movie.title ?? "").trim();
-      const year = Number(movie.year);
-      const imdbRating = Number(movie.imdbRating ?? movie.imdb_rating);
-      const reason = String(movie.reason ?? "").trim();
-
-      if (!title || !Number.isFinite(year) || !Number.isFinite(imdbRating)) {
-        return null;
-      }
-
-      return {
-        title,
-        year: Math.round(year),
-        imdbRating,
-        reason: reason || "A strong match for your mood.",
-      } satisfies AiMovie;
-    })
-    .filter((movie): movie is AiMovie => movie !== null)
-    // Accept 6.5+ to handle niche/actor-specific requests; quality still maintained
-    .filter((movie) => movie.imdbRating >= 6.5)
-    .slice(0, 5);
-
-  if (normalized.length < 1) {
-    throw new Error("NaraRouter returned no valid movies");
-  }
-
-  return normalized;
-}
-
 export class NaraRouterError extends Error {
   status: number;
 
@@ -116,67 +21,6 @@ export class NaraRouterError extends Error {
     this.name = "NaraRouterError";
     this.status = status;
   }
-}
-
-function mapHttpError(status: number, errorText: string): NaraRouterError {
-  const lower = errorText.toLowerCase();
-
-  let apiMessage = "";
-  try {
-    const parsed = JSON.parse(errorText) as {
-      error?: { message?: string; type?: string };
-      message?: string;
-    };
-    apiMessage =
-      parsed.error?.message || parsed.message || errorText.slice(0, 300);
-  } catch {
-    apiMessage = errorText.slice(0, 300);
-  }
-
-  if (lower.includes("telegram_required") || lower.includes("bind your telegram")) {
-    return new NaraRouterError(
-      "NaraRouter requires linking Telegram. Open router.bynara.id/settings, bind Telegram, then try again.",
-      403,
-    );
-  }
-
-  if (
-    status === 402 ||
-    lower.includes("insufficient") ||
-    lower.includes("quota") ||
-    lower.includes("credits")
-  ) {
-    return new NaraRouterError(
-      "NaraRouter credits/quota exhausted. Check your plan at router.naraya.ai.",
-      402,
-    );
-  }
-
-  if (status === 401) {
-    return new NaraRouterError(
-      "NaraRouter API key is invalid. Check NARAROUTER_API_KEY in .env.local.",
-      401,
-    );
-  }
-
-  if (status === 403) {
-    return new NaraRouterError(
-      apiMessage || "NaraRouter denied this request (403).",
-      403,
-    );
-  }
-
-  if (status === 429) {
-    return new NaraRouterError(
-      "NaraRouter rate limit hit. Wait a moment and try again.",
-      429,
-    );
-  }
-
-  return new NaraRouterError(
-    apiMessage || `NaraRouter request failed (${status}).`,
-    status >= 400 && status < 600 ? status : 502,
-  );
 }
 
 function buildFilterPrompt(
@@ -202,54 +46,47 @@ function buildFilterPrompt(
     .join("\n\n");
 
   const storyText = data.story?.trim();
+  const hasRequest = (storyText?.length ?? 0) >= 3;
 
-  return `You are a strict movie genre and content filter.
+  // همان قاعده اولویت الگوریتم اصلی: متن نوشته‌شده بر mood مقدم است
+  const priorityRule = hasRequest
+    ? `PRIORITY: The written request is the strongest signal. A candidate must satisfy the written request. The selected mood (${data.mood}) is only a tone hint and must not override the written request.`
+    : `PRIORITY: No written request was given, so the selected mood (${data.mood}) is the deciding signal.`;
+
+  return `You are a strict movie content filter.
 
 User Request & Profile:
 - Gender: ${data.gender}
 - Age: ${data.age} years old
 - Location: ${location}
 - Selected Mood: ${data.mood}
-- Story / User Desired Theme: ${storyText || "Not specified"}
+- Written request: ${storyText || "(none)"}
 - Watch Time: ${data.watchTime}
 - Company: ${data.company}
 
+${priorityRule}
+
 Your Task:
-Filter the candidate movies below (which the user previously marked as watched). Return ONLY candidate movies that strictly match ALL of the following criteria.
-Each candidate includes its REAL genres from TMDB — use them as the primary signal.
+From the candidates below (films the user already watched), return ONLY those that genuinely match the profile right now. Each candidate lists its REAL TMDB genres — use them as the primary signal.
 
-STRICT FILTERING RULES:
+MOOD / GENRE COMPATIBILITY (based on TMDB Genres):
+- 'thrill': INCLUDE Horror, Thriller, Mystery, Crime. EXCLUDE Animation, Family, Music.
+- 'happy': INCLUDE Comedy, Family, Animation, Adventure. EXCLUDE Horror, Thriller, heavy Drama.
+- 'romantic': INCLUDE Romance, or Drama with a central love story. EXCLUDE Horror, pure Action.
+- 'sad': INCLUDE emotional/tragic Drama. EXCLUDE Comedy, upbeat Family films.
+- 'chill': INCLUDE Comedy, light Drama, Family, Music, Documentary. EXCLUDE Horror, intense Thriller.
+If the written request names a genre (sci-fi, anime, war, historical...), the candidate MUST have a matching TMDB genre.
 
-1. GENRE & MOOD COMPATIBILITY IS MANDATORY (use TMDB Genres as the primary signal):
-   - Mood 'thrill' OR story mentions horror/scary/thriller/slasher/monster/zombie:
-     * INCLUDE: Horror, Thriller, Mystery genres ONLY.
-     * STRICTLY EXCLUDE: Animation, Family, Comedy, Music genres. Any movie tagged "Animation" or "Family" is automatically excluded.
-   - Mood 'happy' OR story mentions comedy/fun/feel-good:
-     * INCLUDE: Comedy, Family, Animation (lighthearted).
-     * EXCLUDE: Horror, Thriller, dark Drama.
-   - Mood 'romantic':
-     * INCLUDE: Romance genre. Can include Drama if romantic.
-     * EXCLUDE: Horror, pure Action without romance.
-   - Mood 'sad':
-     * INCLUDE: Drama (emotional/tragic).
-     * EXCLUDE: Comedy, Animation, upbeat Family films.
-   - Mood 'adventurous':
-     * INCLUDE: Adventure, Action, Science Fiction, Fantasy.
-   - Mood 'chill':
-     * INCLUDE: Comedy, Drama, Family, Music, Documentary.
-     * EXCLUDE: Horror, intense Thriller.
-   - Mood 'nostalgic':
-     * Include films that match the nostalgic feeling for this viewer's age group.
-   - Additionally, if 'Story / User Desired Theme' mentions a specific genre (e.g. sci-fi, anime, war, historical), candidates MUST have a matching TMDB genre. Non-matching genres are excluded.
+AGE LIMITS (mandatory, cannot be overridden):
+- Age < 6: ONLY G-rated family animation.
+- Age 6-11: ONLY G/PG family-friendly films.
+- Age 12-15: PG, mild PG-13 at most. No horror, no graphic violence.
+- Age 16-17: PG-13 at most. No R-rated content.
+- Age >= 18: any rating, but exclude preschool cartoons unless explicitly requested.
+- Company 'family': content must be safe for mixed ages regardless of the viewer's own age.
 
-2. AGE APPROPRIATENESS IS MANDATORY:
-   - Age < 6 (toddler): ONLY G-rated family animation. EXCLUDE all adult, PG-13, R-rated, scary, or violent content.
-   - Age 6–11 (kids): ONLY kids/family-friendly (G, PG). EXCLUDE mature, scary, or adult content.
-   - Age ≥ 18: Do NOT include toddler/preschool cartoons unless the user explicitly asked for kids animated films.
-
-3. BE EXTREMELY SELECTIVE:
-   - For each candidate ask: "Given this user's current mood (${data.mood}), age (${data.age}), and desired theme, would they genuinely want to re-watch this movie right now?" If doubtful, EXCLUDE it.
-   - If NONE of the candidates match all rules, return an empty array.
+BE SELECTIVE:
+For each candidate ask: "Would this user genuinely want to RE-WATCH this film right now?" If doubtful, EXCLUDE it. If none match, return an empty array.
 
 Candidate Movies:
 ${formattedCandidates}
@@ -305,65 +142,5 @@ export async function filterRelevantWatched(
       );
   } catch {
     return [];
-  }
-}
-
-export async function suggestMovies(data: RecommendRequest): Promise<AiMovie[]> {
-  const apiKey = process.env.NARAROUTER_API_KEY;
-  // Free-tier friendly default that currently answers on NaraRouter
-  const model = process.env.NARAROUTER_MODEL || "tencent-hy3";
-
-  if (!apiKey) {
-    throw new NaraRouterError("NARAROUTER_API_KEY is not configured", 500);
-  }
-
-  const run = async (): Promise<AiMovie[]> => {
-    const response = await fetch(NARAROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey.trim()}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You recommend movies. Always respond with valid JSON only. Do not wrap the JSON in markdown.",
-          },
-          { role: "user", content: buildPrompt(data) },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw mapHttpError(response.status, errorText);
-    }
-
-    const json = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const content = json.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty NaraRouter response");
-    }
-
-    return normalizeMovies(extractJson(content));
-  };
-
-  try {
-    return await run();
-  } catch (firstError) {
-    if (firstError instanceof NaraRouterError && firstError.status < 500) {
-      throw firstError;
-    }
-
-    try {
-      return await run();
-    } catch {
-      throw firstError;
-    }
   }
 }

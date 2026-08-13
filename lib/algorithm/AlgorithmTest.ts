@@ -1,152 +1,132 @@
-import type { RecommendRequest } from "@/lib/types";
-import { RecommendationAlgorithm } from "./RecommendationAlgorithm";
+import type { RecommendRequest } from "../types.ts";
+import { RecommendationAlgorithm } from "./RecommendationAlgorithm.ts";
 
 /**
- * Test scenarios to demonstrate the algorithm in action
+ * تست‌های واقعی الگوریتم پیشنهاد فیلم.
+ * هر تست یک assert دارد؛ در صورت شکست، exit code غیرصفر برمی‌گردد.
+ * اجرا: node --experimental-strip-types lib/algorithm/AlgorithmTest.ts
  */
 
-// Scenario 1: Rainy day + sad mood (weather-mood connection)
-const scenario1: RecommendRequest = {
-  gender: "female",
-  age: 28,
-  country: "Iran",
-  city: "Tehran",
-  locationLabel: "Tehran, Iran",
-  latitude: 35.6892,
-  longitude: 51.3890,
-  weather: "rainy",
-  mood: "sad",
-  story: "",
-  watchTime: "night",
-  company: "alone",
-  locale: "fa",
-  seenTitles: [],
-};
-
-// Scenario 2: Family viewing with young child (company-age connection)
-const scenario2: RecommendRequest = {
-  gender: "male",
-  age: 35,
-  country: "USA",
-  city: "New York",
-  locationLabel: "New York, USA",
-  latitude: 40.7128,
-  longitude: -74.0060,
-  weather: "sunny",
-  mood: "happy",
-  story: "",
-  watchTime: "afternoon",
-  company: "family",
-  locale: "en",
-  seenTitles: [],
-};
-
-// Scenario 3: Romantic evening with partner (company-mood connection)
-const scenario3: RecommendRequest = {
-  gender: "female",
-  age: 30,
-  country: "France",
-  city: "Paris",
-  locationLabel: "Paris, France",
-  latitude: 48.8566,
-  longitude: 2.3522,
-  weather: "cloudy",
-  mood: "romantic",
-  story: "",
-  watchTime: "night",
-  company: "partner",
-  locale: "en",
-  seenTitles: [],
-};
-
-// Scenario 4: Late night thriller alone (watchTime-mood connection)
-const scenario4: RecommendRequest = {
-  gender: "male",
-  age: 25,
-  country: "UK",
-  city: "London",
-  locationLabel: "London, UK",
-  latitude: 51.5074,
-  longitude: -0.1278,
-  weather: "cloudy",
-  mood: "thrill",
-  story: "",
-  watchTime: "night",
-  company: "alone",
-  locale: "en",
-  seenTitles: [],
-};
-
-// Scenario 5: Child wanting thrill (age-mood restriction)
-const scenario5: RecommendRequest = {
-  gender: "male",
-  age: 10,
-  country: "Germany",
-  city: "Berlin",
-  locationLabel: "Berlin, Germany",
-  latitude: 52.5200,
-  longitude: 13.4050,
-  weather: "sunny",
-  mood: "thrill",
-  story: "",
-  watchTime: "afternoon",
-  company: "family",
-  locale: "en",
-  seenTitles: [],
-};
-
-/**
- * Run test scenarios and display results
- */
-export function runAlgorithmTests() {
-  console.log("=== Recommendation Algorithm Test Results ===\n");
-
-  // Test Scenario 1
-  console.log("--- Scenario 1: Rainy day + sad mood ---");
-  const weights1 = RecommendationAlgorithm.getWeights(scenario1);
-  const insights1 = RecommendationAlgorithm.getInsights(scenario1);
-  console.log("Weights:", weights1);
-  console.log("Insights:", insights1);
-  console.log("");
-
-  // Test Scenario 2
-  console.log("--- Scenario 2: Family viewing with young child ---");
-  const weights2 = RecommendationAlgorithm.getWeights(scenario2);
-  const insights2 = RecommendationAlgorithm.getInsights(scenario2);
-  console.log("Weights:", weights2);
-  console.log("Insights:", insights2);
-  console.log("");
-
-  // Test Scenario 3
-  console.log("--- Scenario 3: Romantic evening with partner ---");
-  const weights3 = RecommendationAlgorithm.getWeights(scenario3);
-  const insights3 = RecommendationAlgorithm.getInsights(scenario3);
-  console.log("Weights:", weights3);
-  console.log("Insights:", insights3);
-  console.log("");
-
-  // Test Scenario 4
-  console.log("--- Scenario 4: Late night thriller alone ---");
-  const weights4 = RecommendationAlgorithm.getWeights(scenario4);
-  const insights4 = RecommendationAlgorithm.getInsights(scenario4);
-  console.log("Weights:", weights4);
-  console.log("Insights:", insights4);
-  console.log("");
-
-  // Test Scenario 5
-  console.log("--- Scenario 5: Child wanting thrill ---");
-  const weights5 = RecommendationAlgorithm.getWeights(scenario5);
-  const insights5 = RecommendationAlgorithm.getInsights(scenario5);
-  console.log("Weights:", weights5);
-  console.log("Insights:", insights5);
-  console.log("");
+function base(over: Partial<RecommendRequest>): RecommendRequest {
+  return {
+    gender: "male",
+    age: 30,
+    country: "Iran",
+    city: "Tehran",
+    locationLabel: "Tehran, Iran",
+    weather: "sunny",
+    mood: "happy",
+    story: "",
+    watchTime: "night",
+    company: "alone",
+    locale: "en",
+    seenTitles: [],
+    ...over,
+  };
 }
 
-// Export scenarios for manual testing
-export const testScenarios = {
-  scenario1,
-  scenario2,
-  scenario3,
-  scenario4,
-  scenario5,
-};
+let passed = 0;
+let failed = 0;
+
+function check(name: string, condition: boolean) {
+  if (condition) {
+    passed += 1;
+    console.log(`  PASS  ${name}`);
+  } else {
+    failed += 1;
+    console.error(`  FAIL  ${name}`);
+  }
+}
+
+console.log("=== RecommendationAlgorithm tests ===\n");
+
+// ۱) هیچ insight ساختگی آب‌وهوا وقتی قاعده‌ی آب‌وهوایی فعال نیست
+{
+  const insights = RecommendationAlgorithm.getInsights(
+    base({ weather: "sunny", company: "partner", mood: "romantic" }),
+  );
+  check(
+    "no fabricated weather insight (sunny+romantic)",
+    !insights.some((i) => i.toLowerCase().includes("weather")),
+  );
+  check(
+    "partner+romantic insight present",
+    insights.some((i) => i.toLowerCase().includes("partner")),
+  );
+}
+
+// ۲) هر insight باید از یک قاعده‌ی واقعاً فعال بیاید (تعداد <= تعداد قواعد)
+{
+  const insights = RecommendationAlgorithm.getInsights(
+    base({ weather: "cloudy", company: "alone", mood: "thrill" }),
+  );
+  check(
+    "cloudy weather produces NO weather sentence",
+    !insights.some((i) => i.toLowerCase().includes("cloudy")),
+  );
+}
+
+// ۳) متن فقط فاصله نباید «درخواست خاص» شمرده شود
+{
+  const prompt = RecommendationAlgorithm.getPrompt(base({ story: "           " }));
+  check(
+    "whitespace-only story => no written request",
+    prompt.includes("Written request: (none)") &&
+      prompt.includes("No written request was given"),
+  );
+}
+
+// ۴) متن کوتاه واقعی باید «درخواست خاص» شمرده شود
+{
+  const prompt = RecommendationAlgorithm.getPrompt(base({ story: "anime" }));
+  check(
+    "short real story counts as request",
+    prompt.includes("written request is the strongest signal"),
+  );
+}
+
+// ۵) تضاد متن و mood: متن برنده است و اول اولویت‌ها می‌آید
+{
+  const prompt = RecommendationAlgorithm.getPrompt(
+    base({ mood: "thrill", story: "comedy please, something light" }),
+  );
+  check(
+    "story wins over mood in priority order",
+    prompt.includes("1. the written request"),
+  );
+}
+
+// ۶) کودک ۱۰ ساله: قید سخت محتوا و سن به عنوان اولویت اول
+{
+  const prompt = RecommendationAlgorithm.getPrompt(
+    base({ age: 10, mood: "thrill" }),
+  );
+  check("age 10 => hard content limit", prompt.includes("HARD CONTENT LIMIT"));
+  check(
+    "age 10 => age is top priority",
+    prompt.includes("1. age-appropriateness"),
+  );
+}
+
+// ۷) بزرگسال با خانواده: باید محدودیت خانوادگی بگیرد
+{
+  const prompt = RecommendationAlgorithm.getPrompt(
+    base({ age: 35, company: "family", mood: "thrill" }),
+  );
+  check(
+    "adult+family => family safety note",
+    prompt.includes("watching with family"),
+  );
+}
+
+// ۸) بزرگسال تنها: هیچ قید سختی نباید باشد
+{
+  const prompt = RecommendationAlgorithm.getPrompt(base({ age: 30 }));
+  check(
+    "adult alone => no hard content limit",
+    !prompt.includes("HARD CONTENT LIMIT"),
+  );
+}
+
+console.log(`\n=== ${passed} passed, ${failed} failed ===`);
+if (failed > 0) process.exit(1);

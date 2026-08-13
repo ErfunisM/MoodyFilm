@@ -1,4 +1,4 @@
-import type { AiMovie, SuggestedMovie } from "./types";
+import type { AiMovie, SuggestedMovie } from "./types.ts";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w780";
@@ -29,10 +29,12 @@ export const TMDB_GENRE_MAP: Record<number, string> = {
 interface TmdbSearchResult {
   id: number;
   title: string;
+  original_title?: string;
   release_date?: string;
   poster_path?: string | null;
   overview?: string;
   vote_average?: number;
+  vote_count?: number;
   genre_ids?: number[];
 }
 
@@ -48,17 +50,45 @@ interface TmdbMovieDetails {
   };
 }
 
+/** نرمال‌سازی عنوان برای مقایسه: حذف علائم و حروف اضافه */
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\b(the|a|an)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** آیا عنوان نتیجه TMDB با عنوان پیشنهادی AI یکی است؟ */
+function titleMatches(candidate: TmdbSearchResult, movie: AiMovie): boolean {
+  const wanted = normalizeTitle(movie.title);
+  if (!wanted) return false;
+  return [candidate.title, candidate.original_title]
+    .filter((t): t is string => Boolean(t))
+    .some((t) => {
+      const found = normalizeTitle(t);
+      return found === wanted || found.includes(wanted) || wanted.includes(found);
+    });
+}
+
 function scoreMatch(candidate: TmdbSearchResult, movie: AiMovie): number {
   const candidateYear = candidate.release_date
     ? Number(candidate.release_date.slice(0, 4))
     : null;
   let score = 0;
 
+  // تطبیق عنوان مهم‌ترین سیگنال است
+  if (titleMatches(candidate, movie)) score += 20;
+
   if (candidateYear === movie.year) score += 10;
   else if (candidateYear && Math.abs(candidateYear - movie.year) <= 1) score += 5;
+  else if (candidateYear && Math.abs(candidateYear - movie.year) > 5) score -= 5;
 
   if (candidate.poster_path) score += 2;
   if ((candidate.vote_average ?? 0) > 0) score += 1;
+  // فیلم‌های شناخته‌شده بر نتایج بی‌نام‌ونشان مقدم‌اند
+  if ((candidate.vote_count ?? 0) >= 100) score += 3;
 
   return score;
 }
@@ -147,23 +177,14 @@ export async function enrichMovies(
   void locale;
 
   const enriched = await Promise.all(
-    movies.map(async (movie) => {
+    movies.map(async (movie): Promise<SuggestedMovie | null> => {
       try {
         // Always fetch English for poster + base data
         const enMatch = await searchMovie(movie, apiKey, "en-US");
 
-        if (!enMatch) {
-          return {
-            ...movie,
-            tmdbId: null,
-            posterUrl: null,
-            overview: null,
-            overviewFa: null,
-            director: null,
-            runtime: null,
-            voteAverage: null,
-            genres: [],
-          } satisfies SuggestedMovie;
+        // فیلمی که در TMDB پیدا نشود یا عنوانش نخواند، توهم مدل است
+        if (!enMatch || !titleMatches(enMatch, movie)) {
+          return null;
         }
 
         // Fetch Persian overview, runtime, and genres in parallel
@@ -181,8 +202,19 @@ export async function enrichMovies(
                 (id) => TMDB_GENRE_MAP[id] ?? String(id),
               );
 
+        const tmdbYear = enMatch.release_date
+          ? Number(enMatch.release_date.slice(0, 4))
+          : null;
+        const tmdbRating =
+          typeof enMatch.vote_average === "number" && enMatch.vote_average > 0
+            ? enMatch.vote_average
+            : null;
+
         return {
           ...movie,
+          // سال و ریتینگ واقعی TMDB بر عدد اعلامی مدل مقدم است
+          year: tmdbYear ?? movie.year,
+          imdbRating: tmdbRating ?? movie.imdbRating,
           tmdbId: enMatch.id,
           posterUrl: enMatch.poster_path
             ? `${TMDB_IMAGE_BASE}${enMatch.poster_path}`
@@ -191,25 +223,14 @@ export async function enrichMovies(
           overviewFa,
           director: details.director,
           runtime: details.runtime,
-          voteAverage:
-            typeof enMatch.vote_average === "number" ? enMatch.vote_average : null,
+          voteAverage: tmdbRating,
           genres,
         } satisfies SuggestedMovie;
       } catch {
-        return {
-          ...movie,
-          tmdbId: null,
-          posterUrl: null,
-          overview: null,
-          overviewFa: null,
-          director: null,
-          runtime: null,
-          voteAverage: null,
-          genres: [],
-        } satisfies SuggestedMovie;
+        return null;
       }
     }),
   );
 
-  return enriched;
+  return enriched.filter((movie): movie is SuggestedMovie => movie !== null);
 }

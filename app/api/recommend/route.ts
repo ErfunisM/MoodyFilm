@@ -131,6 +131,14 @@ export async function POST(request: Request) {
 
     const enriched = await enrichMovies(movies, payload.locale);
 
+    // اگر همه پیشنهادها در TMDB تأیید نشدند، نتیجه‌ای برای نمایش نیست
+    if (enriched.length === 0) {
+      return NextResponse.json(
+        { error: "No verifiable movies matched your profile. Please try again." },
+        { status: 502 },
+      );
+    }
+
     // Build relevantWatched from rawWatched matched by title
     const relevantWatched = relevantTitles
       .map((title) =>

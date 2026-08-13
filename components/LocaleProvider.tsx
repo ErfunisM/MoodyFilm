@@ -6,7 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -26,6 +26,32 @@ type LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
+function getStoredLocale(): Locale {
+  if (typeof window === "undefined") return DEFAULT_LOCALE;
+
+  const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+  return stored === "fa" || stored === "en" ? stored : DEFAULT_LOCALE;
+}
+
+function subscribeToLocaleChanges(callback: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === LOCALE_STORAGE_KEY) callback();
+  };
+
+  const onCustomChange = () => callback();
+
+  window.addEventListener("storage", onStorage);
+  window.addEventListener("filmchi-locale-change", onCustomChange as EventListener);
+
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(
+      "filmchi-locale-change",
+      onCustomChange as EventListener,
+    );
+  };
+}
+
 function applyDocumentLocale(locale: Locale) {
   const dir = locale === "fa" ? "rtl" : "ltr";
   document.documentElement.lang = locale;
@@ -34,19 +60,19 @@ function applyDocumentLocale(locale: Locale) {
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    if (typeof window === "undefined") return DEFAULT_LOCALE;
-    const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    return stored === "fa" || stored === "en" ? stored : DEFAULT_LOCALE;
-  });
+  const locale = useSyncExternalStore(
+    subscribeToLocaleChanges,
+    getStoredLocale,
+    () => DEFAULT_LOCALE,
+  );
 
   useEffect(() => {
     applyDocumentLocale(locale);
   }, [locale]);
 
   const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
     window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
+    window.dispatchEvent(new Event("filmchi-locale-change"));
   }, []);
 
   const value = useMemo<LocaleContextValue>(

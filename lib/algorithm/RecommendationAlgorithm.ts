@@ -1,7 +1,10 @@
-import type { RecommendRequest, AiMovie } from "@/lib/types";
-import { NaraRouterError } from "@/lib/nararouter";
+import type { RecommendRequest, AiMovie } from "../types.ts";
+import { NaraRouterError } from "../nararouter.ts";
 
 const NARAROUTER_URL = "https://router.bynara.id/v1/chat/completions";
+
+/** حداقل تعداد کاراکتر معنادار در متن آخر تا «درخواست خاص» تلقی شود */
+const SPECIFIC_REQUEST_MIN_LENGTH = 3;
 
 /**
  * Extract JSON from AI response
@@ -30,6 +33,9 @@ function normalizeMovies(payload: unknown): AiMovie[] {
     throw new Error("NaraRouter response missing movies array");
   }
 
+  const currentYear = new Date().getFullYear();
+  const seen = new Set<string>();
+
   const normalized = movies
     .map((item) => {
       if (!item || typeof item !== "object") return null;
@@ -43,15 +49,33 @@ function normalizeMovies(payload: unknown): AiMovie[] {
         return null;
       }
 
+      // سال باید در بازه واقعی سینما باشد؛ سال‌های ساختگی رد می‌شوند
+      const roundedYear = Math.round(year);
+      if (roundedYear < 1900 || roundedYear > currentYear + 1) {
+        return null;
+      }
+
+      // ریتینگ خارج از بازه IMDb یعنی مدل عدد را از خودش ساخته
+      if (imdbRating < 0 || imdbRating > 10) {
+        return null;
+      }
+
       return {
         title,
-        year: Math.round(year),
+        year: roundedYear,
         imdbRating,
         reason: reason || "A strong match for your mood.",
       } satisfies AiMovie;
     })
     .filter((movie): movie is AiMovie => movie !== null)
     .filter((movie) => movie.imdbRating >= 6.5)
+    // حذف تکراری‌ها بر اساس عنوان
+    .filter((movie) => {
+      const key = movie.title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .slice(0, 5);
 
   if (normalized.length < 1) {
@@ -140,35 +164,31 @@ interface AlgorithmWeights {
 }
 
 /**
- * Contextual rules that connect different factors together
- * These rules create logical connections between user's answers
+ * Contextual rules that connect different factors together.
+ * Every rule carries its own insight text, so the sentence handed to the AI
+ * is always the actual reason the weight changed — never a guess.
  */
 interface ContextualRule {
+  id: string;
   condition: (data: RecommendRequest) => boolean;
-  adjustment: {
-    factor: keyof AlgorithmWeights;
-    multiplier: number;
-  };
+  factor: keyof AlgorithmWeights;
+  multiplier: number;
+  insight: (data: RecommendRequest) => string;
 }
 
+/** سطح محدودیت محتوایی بر اساس سن مخاطب */
+type ContentTier = "toddler" | "kids" | "preteen" | "teen" | "adult";
+
 /**
- * Recommendation Algorithm Component
- * 
- * This component implements a multi-stage algorithm that:
- * 1. Analyzes user's answers in context of each other
- * 2. Applies contextual rules to connect different factors
- * 3. Weights recommendations based on user profile
- * 4. Enhances AI prompt with algorithmic insights
- * 
- * The algorithm processes the 8 wizard questions as an interconnected system:
- * - Gender → Age appropriateness filtering
- * - Age → Content maturity level
- * - Location → Cultural preferences
- * - Weather → Mood enhancement
- * - Watch Time → Energy level matching
- * - Company → Genre appropriateness
- * - Mood → Primary recommendation driver
- * - Story → Specific theme/actor overrides
+ * Recommendation Algorithm
+ *
+ * Processes the 8 wizard answers as one interconnected system and turns them
+ * into a single, self-consistent prompt:
+ *
+ * 1. Contextual rules adjust factor weights (each rule owns its insight text)
+ * 2. The strongest factors are ranked and handed to the AI as an explicit priority order
+ * 3. Age + company determine a hard content tier that cannot be overridden
+ * 4. The free-text story wins over the selected mood when the two conflict
  */
 export class RecommendationAlgorithm {
   private static readonly DEFAULT_WEIGHTS: AlgorithmWeights = {
@@ -182,110 +202,204 @@ export class RecommendationAlgorithm {
   };
 
   private static readonly CONTEXTUAL_RULES: ContextualRule[] = [
-    // Rule 1: Weather enhances mood
+    // آب‌وهوا حال‌وهوا را تقویت می‌کند
     {
-      condition: (data) => data.weather === "rainy" && data.mood === "sad",
-      adjustment: { factor: "mood", multiplier: 1.3 },
+      id: "weather-rainy-sad",
+      condition: (d) => d.weather === "rainy" && d.mood === "sad",
+      factor: "mood",
+      multiplier: 1.3,
+      insight: () =>
+        "Rainy weather deepens the melancholic mood — lean into reflective, emotionally honest films",
     },
     {
-      condition: (data) => data.weather === "sunny" && data.mood === "happy",
-      adjustment: { factor: "mood", multiplier: 1.2 },
+      id: "weather-sunny-happy",
+      condition: (d) => d.weather === "sunny" && d.mood === "happy",
+      factor: "mood",
+      multiplier: 1.2,
+      insight: () =>
+        "Sunny weather reinforces the upbeat mood — favor bright, energetic films",
     },
     {
-      condition: (data) => data.weather === "snowy" && (data.mood === "romantic" || data.mood === "chill"),
-      adjustment: { factor: "mood", multiplier: 1.25 },
-    },
-
-    // Rule 2: Company affects genre appropriateness
-    {
-      condition: (data) => data.company === "family" && data.age < 18,
-      adjustment: { factor: "age", multiplier: 1.5 },
-    },
-    {
-      condition: (data) => data.company === "partner" && data.mood === "romantic",
-      adjustment: { factor: "mood", multiplier: 1.4 },
-    },
-    {
-      condition: (data) => data.company === "alone" && data.mood === "thrill",
-      adjustment: { factor: "mood", multiplier: 1.3 },
-    },
-
-    // Rule 3: Watch time affects energy level
-    {
-      condition: (data) => data.watchTime === "night" && data.mood === "thrill",
-      adjustment: { factor: "mood", multiplier: 1.2 },
-    },
-    {
-      condition: (data) => data.watchTime === "morning" && data.mood === "happy",
-      adjustment: { factor: "mood", multiplier: 1.15 },
+      id: "weather-snowy-cozy",
+      condition: (d) =>
+        d.weather === "snowy" && (d.mood === "romantic" || d.mood === "chill"),
+      factor: "mood",
+      multiplier: 1.25,
+      insight: (d) =>
+        `Snowy weather creates a cozy atmosphere that amplifies the ${d.mood} mood`,
     },
 
-    // Rule 4: Age affects mood appropriateness
+    // همراه، ژانر مناسب را تعیین می‌کند
     {
-      condition: (data) => data.age < 13 && data.mood === "thrill",
-      adjustment: { factor: "age", multiplier: 2.0 },
+      id: "company-partner-romantic",
+      condition: (d) => d.company === "partner" && d.mood === "romantic",
+      factor: "mood",
+      multiplier: 1.4,
+      insight: () =>
+        "Watching with a partner in a romantic mood — prioritize films that work as a shared intimate experience",
     },
     {
-      condition: (data) => data.age >= 18 && data.mood === "chill",
-      adjustment: { factor: "mood", multiplier: 1.1 },
+      id: "company-alone-thrill",
+      condition: (d) => d.company === "alone" && d.mood === "thrill",
+      factor: "mood",
+      multiplier: 1.3,
+      insight: () =>
+        "Watching alone in a thrill mood allows fully immersive, high-tension films",
+    },
+    {
+      id: "company-friends-social",
+      condition: (d) =>
+        d.company === "friends" && (d.mood === "happy" || d.mood === "thrill"),
+      factor: "company",
+      multiplier: 1.3,
+      insight: () =>
+        "Group viewing with friends — favor crowd-pleasing films that spark reactions and conversation",
+    },
+
+    // زمان تماشا سطح انرژی را تعیین می‌کند
+    {
+      id: "time-night-thrill",
+      condition: (d) => d.watchTime === "night" && d.mood === "thrill",
+      factor: "mood",
+      multiplier: 1.2,
+      insight: () =>
+        "Late-night viewing suits dark, atmospheric, tension-driven films",
+    },
+    {
+      id: "time-morning-happy",
+      condition: (d) => d.watchTime === "morning" && d.mood === "happy",
+      factor: "mood",
+      multiplier: 1.15,
+      insight: () =>
+        "Morning viewing calls for light, uplifting films rather than heavy or draining ones",
+    },
+    {
+      id: "time-morning-heavy-mood",
+      condition: (d) =>
+        d.watchTime === "morning" && (d.mood === "thrill" || d.mood === "sad"),
+      factor: "watchTime",
+      multiplier: 1.3,
+      insight: (d) =>
+        `Morning viewing tempers the ${d.mood} mood — avoid the most extreme or draining titles`,
+    },
+
+    // سن سطح محتوا را محدود می‌کند
+    {
+      id: "age-minor-intense-mood",
+      condition: (d) => d.age < 13 && (d.mood === "thrill" || d.mood === "romantic"),
+      factor: "age",
+      multiplier: 2.0,
+      insight: (d) =>
+        `Viewer is ${d.age} years old with a ${d.mood} mood — deliver the feeling through age-appropriate adventure or family films, never mature content`,
+    },
+    {
+      id: "age-family-viewing",
+      condition: (d) => d.company === "family",
+      factor: "age",
+      multiplier: 1.5,
+      insight: () =>
+        "Family group viewing — content must be safe for mixed ages, with no graphic violence, sexual content, or heavy profanity",
     },
   ];
 
   /**
-   * Calculate dynamic weights based on contextual rules
-   * This connects different user answers together
+   * Calculate dynamic weights and collect the insight of every rule that fired.
+   * Returning both together guarantees the insights always match the weights.
    */
-  private static calculateWeights(data: RecommendRequest): AlgorithmWeights {
+  private static evaluate(data: RecommendRequest): {
+    weights: AlgorithmWeights;
+    insights: string[];
+  } {
     const weights = { ...this.DEFAULT_WEIGHTS };
-
-    for (const rule of this.CONTEXTUAL_RULES) {
-      if (rule.condition(data)) {
-        weights[rule.adjustment.factor] *= rule.adjustment.multiplier;
-      }
-    }
-
-    return weights;
-  }
-
-  /**
-   * Generate algorithmic insights to enhance AI prompt
-   * This provides context about how factors interact
-   */
-  private static generateInsights(data: RecommendRequest, weights: AlgorithmWeights): string {
     const insights: string[] = [];
 
-    // Mood-Weather connection
-    if (weights.mood > this.DEFAULT_WEIGHTS.mood * 1.2) {
-      insights.push(`Weather (${data.weather}) significantly enhances the ${data.mood} mood`);
+    for (const rule of this.CONTEXTUAL_RULES) {
+      if (!rule.condition(data)) continue;
+      weights[rule.factor] *= rule.multiplier;
+      insights.push(rule.insight(data));
     }
 
-    // Company-Age connection
-    if (weights.age > this.DEFAULT_WEIGHTS.age * 1.3) {
-      insights.push(`Watching with ${data.company} requires strict age-appropriate content for ${data.age}-year-old`);
+    // متن آزاد مرحله آخر، مهم‌ترین سیگنال است
+    if (this.hasSpecificRequest(data)) {
+      weights.story *= 1.5;
     }
 
-    // Company-Mood connection
-    if (data.company === "partner" && data.mood === "romantic") {
-      insights.push("Partner-focused romantic viewing experience");
-    }
+    return { weights, insights };
+  }
 
-    // Watch Time-Mood connection
-    if (data.watchTime === "night" && data.mood === "thrill") {
-      insights.push("Late-night thriller atmosphere");
-    }
+  /** آیا کاربر در مرحله آخر درخواست معناداری نوشته است؟ */
+  private static hasSpecificRequest(data: RecommendRequest): boolean {
+    return (data.story?.trim().length ?? 0) >= SPECIFIC_REQUEST_MIN_LENGTH;
+  }
 
-    // Story override
-    if (data.story && data.story.length > 10) {
-      insights.push("User has specific thematic requirements that should override general preferences");
-    }
+  /** سطح محدودیت محتوا: سن کاربر و حضور خانواده هر دو سخت‌گیری می‌آورند */
+  private static resolveContentTier(data: RecommendRequest): ContentTier {
+    if (data.age < 6) return "toddler";
+    if (data.age < 12) return "kids";
+    if (data.age < 16) return "preteen";
+    if (data.age < 18) return "teen";
+    // بزرگسالی که با خانواده تماشا می‌کند هم باید محتوای گروهی بگیرد
+    if (data.company === "family") return "teen";
+    return "adult";
+  }
 
-    return insights.length > 0 ? insights.join(". ") + "." : "Standard recommendation flow.";
+  /** قید سنی سخت که مدل اجازه عبور از آن را ندارد */
+  private static buildContentConstraint(data: RecommendRequest): string {
+    const tier = this.resolveContentTier(data);
+    const familyNote =
+      data.company === "family" && data.age >= 18
+        ? " The viewer is an adult but is watching with family, so children may be present."
+        : "";
+
+    switch (tier) {
+      case "toddler":
+        return `HARD CONTENT LIMIT — viewer is ${data.age}: ONLY G-rated animation and preschool-friendly films. Absolutely no horror, violence, romance, death themes, or frightening imagery.`;
+      case "kids":
+        return `HARD CONTENT LIMIT — viewer is ${data.age}: ONLY G/PG family films and animation. No horror, no gore, no sexual content, no strong profanity, no disturbing themes.${familyNote}`;
+      case "preteen":
+        return `HARD CONTENT LIMIT — viewer is ${data.age}: PG films only, mild PG-13 adventure at most. No horror, no graphic violence, no sexual content, no drug use.${familyNote}`;
+      case "teen":
+        return `HARD CONTENT LIMIT — viewer is ${data.age}: PG-13 at most. No R-rated films, no explicit sexual content, no graphic gore, no extreme violence.${familyNote}`;
+      case "adult":
+        return `Content rating: viewer is ${data.age} — any rating is acceptable, but avoid preschool/toddler cartoons unless explicitly requested.`;
+    }
   }
 
   /**
-   * Build enhanced prompt with algorithmic insights
+   * Rank factors by weight so the AI receives an explicit priority order
+   * instead of a flat list it has to guess between.
    */
-  private static buildEnhancedPrompt(data: RecommendRequest, insights: string): string {
+  private static buildPriorityOrder(
+    data: RecommendRequest,
+    weights: AlgorithmWeights,
+  ): string {
+    const labels: Record<keyof AlgorithmWeights, string> = {
+      story: "the written request",
+      mood: `mood (${data.mood})`,
+      age: `age-appropriateness (${data.age})`,
+      company: `company (${data.company})`,
+      watchTime: `watch time (${data.watchTime})`,
+      weather: `weather (${data.weather})`,
+      location: "location/culture",
+    };
+
+    const active = (Object.keys(weights) as Array<keyof AlgorithmWeights>)
+      // وقتی متنی نوشته نشده، story نباید در اولویت‌ها ظاهر شود
+      .filter((key) => key !== "story" || this.hasSpecificRequest(data))
+      .sort((a, b) => weights[b] - weights[a]);
+
+    return active.map((key, i) => `${i + 1}. ${labels[key]}`).join("\n");
+  }
+
+  /**
+   * Build the final prompt. Everything the model sees must be consistent:
+   * no contradictory instructions, no fabricated context.
+   */
+  private static buildEnhancedPrompt(
+    data: RecommendRequest,
+    insights: string[],
+    weights: AlgorithmWeights,
+  ): string {
     const location =
       data.locationLabel ||
       [data.city, data.country].filter(Boolean).join(", ") ||
@@ -294,62 +408,74 @@ export class RecommendationAlgorithm {
     const isFarsi = data.locale === "fa";
 
     const reasonInstruction = isFarsi
-      ? 'یک جمله کوتاه به زبان فارسی که توضیح می‌دهد چرا این فیلم مناسب است'
+      ? "یک جمله کوتاه به زبان فارسی که توضیح می‌دهد چرا این فیلم مناسب است"
       : "One short sentence in English explaining why this fits";
 
     const seenSection =
       data.seenTitles && data.seenTitles.length > 0
-        ? `\n- Movies already seen (DO NOT suggest these): ${data.seenTitles.join(", ")}`
+        ? `\n- Already seen (NEVER suggest these): ${data.seenTitles.join(", ")}`
         : "";
 
     const storyHint = data.story?.trim();
-    const hasSpecificRequest = storyHint && storyHint.length > 5;
+    const hasRequest = this.hasSpecificRequest(data);
 
-    return `You are a movie recommendation expert. Suggest between 1 and 5 movies based on this viewer profile.
+    // متن کاربر برنده تضاد است؛ این تنها قاعده حاکم بر تعارض mood/story است
+    const conflictRule = hasRequest
+      ? `PRIORITY RULE: The viewer's written request is the strongest signal. If it conflicts with the selected mood (${data.mood}), follow the written request and treat the mood only as a tone hint. Never ignore the written request.`
+      : `PRIORITY RULE: No written request was given, so the selected mood (${data.mood}) is the primary driver. Do not invent preferences the viewer never expressed.`;
+
+    const insightSection =
+      insights.length > 0
+        ? insights.map((line) => `- ${line}`).join("\n")
+        : "- No special factor interactions detected; treat the profile at face value.";
+
+    return `You are a movie recommendation expert. Suggest between 1 and 5 movies for this viewer.
 
 Viewer profile:
 - Gender: ${data.gender}
 - Age: ${data.age}
 - Location: ${location}
-- Current mood: ${data.mood}
+- Selected mood: ${data.mood}
 - Weather: ${data.weather}
-- Preferred watch time: ${data.watchTime}
+- Watch time: ${data.watchTime}
 - Watching with: ${data.company}
-- Mood/story details: ${storyHint || "none provided"}${seenSection}
+- Written request: ${storyHint || "(none)"}${seenSection}
 
-Algorithmic insights:
-${insights}
+${this.buildContentConstraint(data)}
+
+${conflictRule}
+
+Decision priority (highest first):
+${this.buildPriorityOrder(data, weights)}
+
+Contextual analysis:
+${insightSection}
 
 Rules:
-- Prefer movies with IMDb rating of 7.0 or higher. If the request is very specific (e.g. a particular actor, director, or niche genre), you may include movies with IMDb rating as low as 6.5 — but only if they genuinely fit.
-- Prefer well-known, widely available films
-- Match the mood, company, time of day, and the story/theme details closely
-- If the viewer requests a specific actor, director, or theme: prioritize those over generic suggestions
-- Return ONLY valid JSON, no markdown, no commentary
-- Return as many movies as you can (up to 5). If you can only find 1-4 strong matches, return those — do NOT pad the list with irrelevant movies just to reach 5
+- Every movie MUST be a real, released film. Never invent titles, years, or ratings.
+- Report the film's true IMDb rating. Only suggest films rated 7.0 or higher, unless the written request is narrow (specific actor, director, or niche genre) — then 6.5 is the floor.
+- Match the decision priority above. A film that satisfies a higher priority beats one that only satisfies lower ones.
+- Do NOT pad the list. Return 1-4 films if only that many genuinely fit. Quality over quantity.
+- Do not repeat the same film twice.
+- Return ONLY valid JSON. No markdown, no commentary, no explanation outside the JSON.
 - The "reason" field must be: ${reasonInstruction}
-- Schema:
+- The "reason" must reference the viewer's actual inputs, not generic praise.
+
+Schema:
 {
   "movies": [
     {
-      "title": "Movie Title",
+      "title": "Exact English title",
       "year": 2010,
       "imdbRating": 8.1,
       "reason": "..."
     }
   ]
-}
-Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest ? "\n\nIMPORTANT: The viewer has a specific request in the story details. Honor it strictly." : ""}`;
+}`;
   }
 
   /**
    * Main algorithm execution
-   *
-   * This method:
-   * 1. Calculates contextual weights based on interconnected answers
-   * 2. Generates algorithmic insights about factor relationships
-   * 3. Enhances the AI prompt with these insights
-   * 4. Returns recommendations from the enhanced prompt
    */
   static async execute(data: RecommendRequest): Promise<AiMovie[]> {
     const apiKey = process.env.NARAROUTER_API_KEY;
@@ -359,16 +485,9 @@ Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest 
       throw new NaraRouterError("NARAROUTER_API_KEY is not configured", 500);
     }
 
-    // Step 1: Calculate dynamic weights based on contextual rules
-    const weights = this.calculateWeights(data);
+    const { weights, insights } = this.evaluate(data);
+    const enhancedPrompt = this.buildEnhancedPrompt(data, insights, weights);
 
-    // Step 2: Generate algorithmic insights
-    const insights = this.generateInsights(data, weights);
-
-    // Step 3: Build enhanced prompt with algorithmic insights
-    const enhancedPrompt = this.buildEnhancedPrompt(data, insights);
-
-    // Step 4: Call AI with enhanced prompt
     const run = async (): Promise<AiMovie[]> => {
       const response = await fetch(NARAROUTER_URL, {
         method: "POST",
@@ -382,7 +501,7 @@ Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest 
             {
               role: "system",
               content:
-                "You recommend movies. Always respond with valid JSON only. Do not wrap the JSON in markdown.",
+                "You recommend real, existing movies. Always respond with valid JSON only. Do not wrap the JSON in markdown. Never invent films or ratings.",
             },
             { role: "user", content: enhancedPrompt },
           ],
@@ -402,7 +521,21 @@ Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest 
         throw new Error("Empty NaraRouter response");
       }
 
-      return normalizeMovies(extractJson(content));
+      const movies = normalizeMovies(extractJson(content));
+
+      // فیلم‌های دیده‌شده باید حتی اگر مدل نادیده گرفت، حذف شوند
+      const seenSet = new Set(
+        (data.seenTitles ?? []).map((t) => t.trim().toLowerCase()),
+      );
+      const unseen = movies.filter(
+        (movie) => !seenSet.has(movie.title.toLowerCase()),
+      );
+
+      if (unseen.length === 0) {
+        throw new Error("NaraRouter returned only already-seen movies");
+      }
+
+      return unseen;
     };
 
     try {
@@ -424,14 +557,21 @@ Between 1 and 5 movies in the array. Quality over quantity.${hasSpecificRequest 
    * Get the calculated weights for debugging/analysis
    */
   static getWeights(data: RecommendRequest): AlgorithmWeights {
-    return this.calculateWeights(data);
+    return this.evaluate(data).weights;
   }
 
   /**
    * Get the insights for debugging/analysis
    */
-  static getInsights(data: RecommendRequest): string {
-    const weights = this.calculateWeights(data);
-    return this.generateInsights(data, weights);
+  static getInsights(data: RecommendRequest): string[] {
+    return this.evaluate(data).insights;
+  }
+
+  /**
+   * Get the final prompt for debugging/analysis
+   */
+  static getPrompt(data: RecommendRequest): string {
+    const { weights, insights } = this.evaluate(data);
+    return this.buildEnhancedPrompt(data, insights, weights);
   }
 }

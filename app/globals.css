@@ -696,7 +696,35 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 }
 
 .watched-btn--poster {
-  display: none;
+  position: absolute;
+  top: 3.25rem;
+  left: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  width: max-content;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 0;
+  padding: 0.42rem 0.58rem;
+  border: none;
+  border-radius: 0.48rem;
+  background: color-mix(in srgb, var(--ink) 86%, transparent);
+  color: var(--amber);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.watched-btn--poster:hover:not(:disabled) {
+  color: var(--active-fg);
+  border: none;
+}
+
+.watched-btn--poster.watched-btn--done {
+  color: var(--amber);
+  opacity: 0.85;
 }
 
 .step-actions {
@@ -777,13 +805,14 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 
 .imdb-badge {
   position: absolute;
-  top: 1.35rem;
-  left: 1.35rem;
+  top: 1rem;
+  left: 1rem;
   z-index: 2;
-  display: none;
-  min-width: 5.25rem;
-  padding: 0.8rem 0.7rem;
-  border-radius: 0.65rem;
+  display: block;
+  width: max-content;
+  min-width: 0;
+  padding: 0.42rem 0.58rem;
+  border-radius: 0.48rem;
   background: color-mix(in srgb, var(--ink) 86%, transparent);
   color: var(--amber);
   line-height: 1;
@@ -792,18 +821,19 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 
 .imdb-badge__score,
 .imdb-badge__label {
-  display: block;
+  display: inline;
   font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
 .imdb-badge__score {
-  font-size: 1rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .imdb-badge__label {
-  margin-top: 0.45rem;
-  font-size: 1.05rem;
+  margin-top: 0;
+  margin-left: 0.28rem;
 }
 
 .poster-veil {
@@ -891,6 +921,133 @@ input[type="number"].text-input::-webkit-inner-spin-button {
   text-align: justify;
 }
 
+/* Desktop: mirror the mobile info layout, sized for the wider column */
+@media (min-width: 720px) {
+  .movie-count {
+    display: none;
+  }
+
+  .movie-copy {
+    gap: 0.9rem;
+  }
+
+  .movie-meta--mobile-hide {
+    display: none;
+  }
+
+  .movie-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: color-mix(in srgb, var(--control-bg) 76%, transparent);
+  }
+
+  .movie-info-item {
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 4.75rem;
+    padding: 0.7rem 0.5rem;
+    text-align: center;
+  }
+
+  .movie-info-item + .movie-info-item {
+    border-inline-start: 1px solid var(--line);
+  }
+
+  .movie-info-icon {
+    color: var(--cream-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    opacity: 0.72;
+  }
+
+  .movie-info-label {
+    color: var(--cream-muted);
+    font-size: 0.72rem;
+    line-height: 1.2;
+  }
+
+  .movie-info-item strong {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--cream);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .movie-director-toggle {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+    color: var(--cream);
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .director-name-popover {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: max-content;
+    max-width: 10rem;
+    min-height: 0;
+    padding: 0.42rem 0.58rem;
+    border: none;
+    border-radius: 0.48rem;
+    background: color-mix(in srgb, var(--ink) 86%, transparent);
+    color: var(--amber);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
+    transform: translateX(-50%);
+    white-space: normal;
+  }
+
+  .movie-genre-list {
+    display: flex;
+    justify-content: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .movie-genre-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 4.75rem;
+    min-height: 2rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    background: var(--control-bg);
+    color: var(--cream);
+    font-size: 0.85rem;
+  }
+}
+
 @media (max-width: 719px) {
   .wizard-shell:has(.movie-reveal) {
     max-width: 430px;
@@ -917,55 +1074,6 @@ input[type="number"].text-input::-webkit-inner-spin-button {
     box-shadow: none;
   }
 
-  .imdb-badge {
-    top: 1rem;
-    left: 1rem;
-    display: block;
-    min-width: 0;
-    width: max-content;
-    padding: 0.42rem 0.58rem;
-    border-radius: 0.48rem;
-    line-height: 1;
-  }
-
-  .watched-btn--poster {
-    position: absolute;
-    top: 3.25rem;
-    left: 1rem;
-    z-index: 2;
-    display: inline-flex;
-    width: max-content;
-    min-width: 0;
-    min-height: 0;
-    margin-top: 0;
-    padding: 0.42rem 0.58rem;
-    border: none;
-    border-radius: 0.48rem;
-    background: color-mix(in srgb, var(--ink) 86%, transparent);
-    color: var(--amber);
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
-    font-size: 0.78rem;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .imdb-badge__score,
-  .imdb-badge__label {
-    display: inline;
-    font-size: 0.78rem;
-    line-height: 1;
-  }
-
-  .imdb-badge__score {
-    letter-spacing: 0;
-  }
-
-  .imdb-badge__label {
-    margin-top: 0;
-    margin-left: 0.28rem;
-  }
-
   .poster-veil {
     height: 42%;
     background: linear-gradient(transparent, rgba(12, 10, 9, 0.9));
@@ -979,7 +1087,7 @@ input[type="number"].text-input::-webkit-inner-spin-button {
     padding: 1.3rem 1.2rem 1.2rem;
     border: 1px solid var(--line);
     border-radius: 1rem;
-    background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+    background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cream) 8%, transparent);
   }
 
