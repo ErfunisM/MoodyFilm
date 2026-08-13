@@ -11,3 +11,5 @@ Features
 - **Bilingual UI** — switch between Persian and English at any time
 - **Light & dark themes** — comfortable viewing in any environment
 - **One-at-a-time reveal** — browse five suggestions at your own pace with next and restart controls
+
+[Live Demo](https://filmchi-eight.vercel.app/)
