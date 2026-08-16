@@ -21,7 +21,6 @@ export function MoodStep({ data, onSelect }: MoodStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.howFeeling}</h2>
       <p className="step-sub">{t.howFeelingSub}</p>
       <div className="mood-grid">
         {moods.map((mood) => (

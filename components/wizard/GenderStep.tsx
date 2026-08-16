@@ -18,7 +18,6 @@ export function GenderStep({ data, onSelect }: GenderStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.gender}</h2>
       <p className="step-sub">{t.genderSub}</p>
       <div className="option-grid" role="radiogroup" aria-label={t.gender}>
         {genders.map((item) => {

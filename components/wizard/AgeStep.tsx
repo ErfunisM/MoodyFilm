@@ -15,7 +15,6 @@ export function AgeStep({ data, onChange, onNext }: AgeStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.age}</h2>
       <p className="step-sub">{t.ageSub}</p>
       <div className="field-group">
         <input

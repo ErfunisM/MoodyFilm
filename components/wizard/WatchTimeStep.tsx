@@ -19,7 +19,6 @@ export function WatchTimeStep({ data, onSelect }: WatchTimeStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.watchTime}</h2>
       <p className="step-sub">{t.whenWithWhomSub}</p>
       <div className="option-grid three">
         {watchTimes.map((item) => (

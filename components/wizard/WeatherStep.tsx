@@ -20,7 +20,6 @@ export function WeatherStep({ data, onSelect }: WeatherStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.weather}</h2>
       <p className="step-sub">{t.weatherSub}</p>
       <div className="mood-grid">
         {weathers.map((weather) => (

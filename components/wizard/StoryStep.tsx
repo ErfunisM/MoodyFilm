@@ -13,7 +13,6 @@ export function StoryStep({ data, onChange }: StoryStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.anythingElse}</h2>
       <p className="step-sub">{t.anythingElseSub}</p>
 
       <label className="field-group">

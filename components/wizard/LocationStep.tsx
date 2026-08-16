@@ -58,7 +58,6 @@ export function LocationStep({ data, onChange, onDone }: LocationStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.country}</h2>
       <p className="step-sub">{t.locationSearchSub}</p>
 
       <div className="location-search-wrap">

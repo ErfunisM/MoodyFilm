@@ -21,7 +21,6 @@ export function CompanyStep({ data, onSelect, loading }: CompanyStepProps) {
 
   return (
     <section className="wizard-step">
-      <h2 className="step-title">{t.watchingWith}</h2>
       <p className="step-sub">{t.whenWithWhomSub}</p>
       <div className="option-grid">
         {companies.map((item) => (
