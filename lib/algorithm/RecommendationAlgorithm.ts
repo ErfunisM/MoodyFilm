@@ -552,26 +552,4 @@ Schema:
       }
     }
   }
-
-  /**
-   * Get the calculated weights for debugging/analysis
-   */
-  static getWeights(data: RecommendRequest): AlgorithmWeights {
-    return this.evaluate(data).weights;
-  }
-
-  /**
-   * Get the insights for debugging/analysis
-   */
-  static getInsights(data: RecommendRequest): string[] {
-    return this.evaluate(data).insights;
-  }
-
-  /**
-   * Get the final prompt for debugging/analysis
-   */
-  static getPrompt(data: RecommendRequest): string {
-    const { weights, insights } = this.evaluate(data);
-    return this.buildEnhancedPrompt(data, insights, weights);
-  }
 }

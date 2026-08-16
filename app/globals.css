@@ -1315,9 +1315,28 @@ input[type="number"].text-input::-webkit-inner-spin-button {
    centered 720px layout. Only affects the movie results screen.
    ========================================================================== */
 @media (min-width: 1024px) {
-  .wizard-shell:has(.movie-reveal) {
+  .wizard-shell {
     max-width: min(1400px, 94vw);
     padding-inline: 3rem;
+  }
+
+  /* Form steps: full-width shell, but keep the content centered in a column */
+  .wizard-main:not(:has(.movie-reveal)) {
+    align-items: center;
+  }
+
+  .wizard-main:not(:has(.movie-reveal)) > .step-stage,
+  .wizard-main:not(:has(.movie-reveal)) > .wizard-nav,
+  .wizard-main:not(:has(.movie-reveal)) > .error-banner {
+    width: 100%;
+    max-width: 720px;
+  }
+
+  /* Keep the header aligned with the centered form content */
+  .wizard-shell:not(:has(.movie-reveal)) .brand-header {
+    width: 100%;
+    max-width: 720px;
+    margin-inline: auto;
   }
 
   .movie-reveal {

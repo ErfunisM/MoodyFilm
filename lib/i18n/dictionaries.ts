@@ -90,11 +90,6 @@ export type Dictionary = {
   runtime: string;
   runtimeValue: string;
   unknownValue: string;
-  langFa: string;
-  langEn: string;
-  theme: string;
-  themeLight: string;
-  themeDark: string;
   countries: Record<string, string>;
   ageWarningText: string;
   ageWarningGoBack: string;
@@ -190,11 +185,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     runtime: "مدت زمان",
     runtimeValue: "{minutes} دقیقه",
     unknownValue: "نامشخص",
-    langFa: "فارسی",
-    langEn: "English",
-    theme: "تم",
-    themeLight: "روشن",
-    themeDark: "تیره",
     ageWarningText: "برخی از فیلم‌های پیشنهادی ممکن است برای سن شما مناسب نباشند. آیا می‌خواهید ادامه دهید؟",
     ageWarningGoBack: "بازگشت",
     ageWarningContinue: "ادامه",
@@ -315,11 +305,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     runtime: "Runtime",
     runtimeValue: "{minutes} min",
     unknownValue: "Unknown",
-    langFa: "فارسی",
-    langEn: "English",
-    theme: "Theme",
-    themeLight: "Light",
-    themeDark: "Dark",
     ageWarningText: "Some of the suggested movies may not be suitable for your age. Do you want to continue?",
     ageWarningGoBack: "Go back",
     ageWarningContinue: "Continue",

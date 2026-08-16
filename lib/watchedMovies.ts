@@ -53,21 +53,8 @@ export function addWatchedMovie(movie: SuggestedMovie): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([entry, ...existing]));
 }
 
-export function removeWatchedMovie(title: string): void {
-  if (typeof window === "undefined") return;
-  const existing = getWatchedMovies();
-  const filtered = existing.filter(
-    (m) => m.title.toLowerCase() !== title.toLowerCase(),
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-}
-
 export function isWatched(title: string): boolean {
   return getWatchedMovies().some(
     (m) => m.title.toLowerCase() === title.toLowerCase(),
   );
-}
-
-export function getWatchedTitles(): string[] {
-  return getWatchedMovies().map((m) => m.title);
 }
