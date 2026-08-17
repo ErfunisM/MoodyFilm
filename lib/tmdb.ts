@@ -44,6 +44,7 @@ interface TmdbSearchResponse {
 
 interface TmdbMovieDetails {
   runtime?: number | null;
+  imdb_id?: string | null;
   genres?: Array<{ id: number; name: string }>;
   credits?: {
     crew?: Array<{ job?: string; name?: string }>;
@@ -140,6 +141,7 @@ async function searchMovie(
 interface TmdbDetails {
   director: string | null;
   runtime: number | null;
+  imdbId: string | null;
   genres: string[];
 }
 
@@ -152,7 +154,7 @@ async function fetchDetails(
   url.searchParams.set("append_to_response", "credits");
 
   const response = await fetch(url.toString(), { next: { revalidate: 3600 } });
-  if (!response.ok) return { director: null, runtime: null, genres: [] };
+  if (!response.ok) return { director: null, runtime: null, imdbId: null, genres: [] };
 
   const data = (await response.json()) as TmdbMovieDetails;
   const director =
@@ -160,8 +162,10 @@ async function fetchDetails(
     null;
   const runtime =
     typeof data.runtime === "number" && data.runtime > 0 ? data.runtime : null;
+  const imdbId =
+    typeof data.imdb_id === "string" && data.imdb_id ? data.imdb_id : null;
   const genres = (data.genres ?? []).map((g) => g.name);
-  return { director, runtime, genres };
+  return { director, runtime, imdbId, genres };
 }
 
 export async function enrichMovies(
@@ -216,6 +220,7 @@ export async function enrichMovies(
           year: tmdbYear ?? movie.year,
           imdbRating: tmdbRating ?? movie.imdbRating,
           tmdbId: enMatch.id,
+          imdbId: details.imdbId,
           posterUrl: enMatch.poster_path
             ? `${TMDB_IMAGE_BASE}${enMatch.poster_path}`
             : null,

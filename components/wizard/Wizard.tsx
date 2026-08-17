@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { LocaleToggler } from "@/components/LocaleToggler";
 import { MovieCard } from "@/components/MovieCard";
+import { Typewriter } from "@/components/Typewriter";
 import { useLocale } from "@/components/LocaleProvider";
 import { AgeStep } from "@/components/wizard/AgeStep";
 import { AgeWarningModal } from "@/components/wizard/AgeWarningModal";
@@ -237,6 +238,9 @@ export function Wizard() {
             <LocaleToggler />
           </div>
         </div>
+        {step === "gender" ? (
+          <Typewriter className="brand-tagline" text={t.tagline} />
+        ) : null}
         {step !== "results" ? (
           <div className="progress-track" aria-hidden>
             <div className="progress-fill" style={{ width: `${progress}%` }} />

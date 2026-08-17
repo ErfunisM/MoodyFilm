@@ -92,6 +92,8 @@ html[data-locale="fa"] body {
 
 html[lang="fa"] .step-title,
 html[data-locale="fa"] .step-title,
+html[lang="fa"] .brand-tagline,
+html[data-locale="fa"] .brand-tagline,
 html[lang="fa"] .option-card strong,
 html[data-locale="fa"] .option-card strong {
   font-family: var(--font-fa);
@@ -154,6 +156,46 @@ body::before {
   height: 100%;
   object-fit: contain;
   object-position: left top;
+}
+
+.brand-tagline {
+  margin: 0.9rem 0 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1rem, 2.4vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.4em;
+}
+
+.brand-tagline > span:first-child {
+  background: linear-gradient(90deg, var(--cream), var(--amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.tagline-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-inline-start: 0.12em;
+  background: var(--amber);
+  animation: tagline-blink 0.8s step-end infinite;
+}
+
+@keyframes tagline-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .header-controls {
@@ -800,7 +842,7 @@ input[type="number"].text-input::-webkit-inner-spin-button {
   position: absolute;
   top: 3.25rem;
   left: 1rem;
-  z-index: 2;
+  z-index: 4;
   display: inline-flex;
   width: max-content;
   min-width: 0;
@@ -906,7 +948,7 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 }
 
 .movie-poster-wrap {
-  /* position: relative; */
+  position: relative;
   aspect-ratio: 2 / 3;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -924,7 +966,7 @@ input[type="number"].text-input::-webkit-inner-spin-button {
   position: absolute;
   top: 1rem;
   left: 1rem;
-  z-index: 2;
+  z-index: 4;
   display: block;
   width: max-content;
   min-width: 0;
@@ -959,6 +1001,129 @@ input[type="number"].text-input::-webkit-inner-spin-button {
   height: 35%;
   background: linear-gradient(transparent, var(--poster-veil));
   pointer-events: none;
+}
+
+/* دکمه پخش که کل کاور را کلیک‌پذیر می‌کند */
+.poster-play {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  background: rgba(12, 10, 9, 0);
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.poster-play:hover,
+.poster-play:focus-visible {
+  background: rgba(12, 10, 9, 0.45);
+  outline: none;
+}
+
+.poster-play__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--amber) 92%, transparent);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  transform: scale(0.6);
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+
+.poster-play__icon svg {
+  width: 2rem;
+  height: 2rem;
+  margin-inline-start: 0.2rem;
+}
+
+.poster-play:hover .poster-play__icon,
+.poster-play:focus-visible .poster-play__icon {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* پاپ‌آپ تریلر: کل صفحه تار می‌شود */
+.trailer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(12, 10, 9, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: modal-fade-in 0.3s ease-out both;
+}
+
+.trailer-modal {
+  position: relative;
+  width: min(90vw, 1100px);
+  max-height: 90vh;
+  animation: modal-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.trailer-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: #000;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+}
+
+.trailer-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.trailer-close {
+  position: absolute;
+  top: -1rem;
+  inset-inline-end: -1rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-strong);
+  color: var(--cream);
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.trailer-close:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.trailer-close svg {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .poster-fallback {

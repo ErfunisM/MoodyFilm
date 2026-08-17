@@ -155,6 +155,7 @@ export async function POST(request: Request) {
         imdbRating: Number(w.imdbRating ?? 0),
         reason: String(w.reason ?? ""),
         tmdbId: null,
+        imdbId: null,
         posterUrl: typeof w.posterUrl === "string" ? w.posterUrl : null,
         overview: typeof w.overview === "string" ? w.overview : null,
         overviewFa: typeof w.overviewFa === "string" ? w.overviewFa : null,

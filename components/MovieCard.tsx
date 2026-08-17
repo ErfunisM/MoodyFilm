@@ -28,15 +28,35 @@ export function MovieCard({
   const isLast = index >= total - 1;
   const [watched, setWatched] = useState(() => isWatched(movie.title));
   const [showDirectorName, setShowDirectorName] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
 
   // Sync watched state when movie changes
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       setWatched(isWatched(movie.title));
       setShowDirectorName(false);
+      setShowTrailer(false);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [movie.director, movie.title]);
+
+  // بستن پاپ‌آپ تریلر با کلید Escape و قفل اسکرول صفحه هنگام باز بودن
+  useEffect(() => {
+    if (!showTrailer) {
+      return;
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowTrailer(false);
+      }
+    }
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [showTrailer]);
 
   const overview =
     locale === "fa" ? (movie.overviewFa || movie.overview) : movie.overview;
@@ -88,6 +108,19 @@ export function MovieCard({
           {watched ? t.alreadyWatched : t.markWatched}
         </button>
         <div className="poster-veil" />
+        <button
+          type="button"
+          className="poster-play"
+          onClick={() => setShowTrailer(true)}
+          aria-label={t.playTrailer}
+          title={t.playTrailer}
+        >
+          <span className="poster-play__icon" aria-hidden>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+        </button>
       </div>
 
       <div className="movie-copy">
@@ -171,6 +204,41 @@ export function MovieCard({
           )}
         </div>
       </div>
+
+      {showTrailer ? (
+        <div
+          className="trailer-overlay"
+          onClick={() => setShowTrailer(false)}
+        >
+          <div
+            className="trailer-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={movie.title}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="trailer-close"
+              onClick={() => setShowTrailer(false)}
+              aria-label={t.closeTrailer}
+              title={t.closeTrailer}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="trailer-frame">
+              <iframe
+                title={movie.title}
+                src={movie.imdbId ? `https://nhdapi.com/movie/${movie.imdbId}` : ""}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

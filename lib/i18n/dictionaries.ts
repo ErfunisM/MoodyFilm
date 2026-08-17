@@ -4,6 +4,7 @@ export const DEFAULT_LOCALE: Locale = "fa";
 export const LOCALE_STORAGE_KEY = "filmchi-locale";
 
 export type Dictionary = {
+  tagline: string;
   whoWatching: string;
   whoWatchingSub: string;
   gender: string;
@@ -85,6 +86,8 @@ export type Dictionary = {
   newResults: string;
   watchedResults: string;
   moviePosterAlt: string;
+  playTrailer: string;
+  closeTrailer: string;
   director: string;
   releaseYear: string;
   runtime: string;
@@ -98,6 +101,7 @@ export type Dictionary = {
 
 export const dictionaries: Record<Locale, Dictionary> = {
   fa: {
+    tagline: "هوشمندانه بهترین فیلم را برای حال‌وهوایت پیدا می‌کنیم",
     whoWatching: "کی می‌خواد فیلم ببینه؟",
     whoWatchingSub: "کمی از خودت بگو تا فیلمچی پیشنهادها را دقیق‌تر کند.",
     gender: "جنسیت",
@@ -180,6 +184,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     newResults: "نتایج جدید",
     watchedResults: "فیلم‌هایی که دیدی",
     moviePosterAlt: "پوستر {title}",
+    playTrailer: "پخش تریلر",
+    closeTrailer: "بستن",
     director: "کارگردان",
     releaseYear: "سال انتشار",
     runtime: "مدت زمان",
@@ -217,6 +223,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
   },
   en: {
+    tagline: "We smartly find the perfect movie for your mood",
     whoWatching: "Who's watching?",
     whoWatchingSub: "Tell us a little about you so Filmchi can tune the picks.",
     gender: "Gender",
@@ -300,6 +307,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     newResults: "New picks",
     watchedResults: "Movies you've seen",
     moviePosterAlt: "{title} poster",
+    playTrailer: "Play trailer",
+    closeTrailer: "Close",
     director: "Director",
     releaseYear: "Release year",
     runtime: "Runtime",
