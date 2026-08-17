@@ -11,12 +11,12 @@ interface MoodStepProps {
 export function MoodStep({ data, onSelect }: MoodStepProps) {
   const { t } = useLocale();
 
-  const moods: { value: Mood; emoji: string; label: string }[] = [
-    { value: "happy", emoji: "😄", label: t.happy },
-    { value: "sad", emoji: "😢", label: t.sad },
-    { value: "romantic", emoji: "🥰", label: t.romantic },
-    { value: "thrill", emoji: "😱", label: t.thrill },
-    { value: "chill", emoji: "😌", label: t.chill },
+  const moods: { value: Mood; label: string }[] = [
+    { value: "happy", label: t.happy },
+    { value: "sad", label: t.sad },
+    { value: "romantic", label: t.romantic },
+    { value: "thrill", label: t.thrill },
+    { value: "chill", label: t.chill },
   ];
 
   return (
@@ -31,9 +31,10 @@ export function MoodStep({ data, onSelect }: MoodStepProps) {
             onClick={() => onSelect(mood.value)}
             aria-pressed={data.mood === mood.value}
           >
-            <span className="mood-emoji" aria-hidden>
-              {mood.emoji}
-            </span>
+            <span
+              className={`mood-emoji mood-icon mood-icon--${mood.value}`}
+              aria-hidden
+            />
             <span className="mood-label">{mood.label}</span>
           </button>
         ))}

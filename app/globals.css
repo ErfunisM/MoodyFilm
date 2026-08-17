@@ -604,12 +604,6 @@ input[type="number"].text-input::-webkit-inner-spin-button {
   margin-bottom: 1.75rem;
 }
 
-@media (min-width: 640px) {
-  .mood-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
 .mood-btn {
   display: flex;
   flex-direction: column;
@@ -634,6 +628,111 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 .mood-label {
   font-size: 0.95rem;
   letter-spacing: 0.04em;
+}
+
+/* Mood step — keep all five icons on a single row (like weather) */
+.mood-grid:not(.weather-grid) {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.mood-grid:not(.weather-grid) .mood-btn {
+  min-height: 6rem;
+  padding: 0.6rem 0.35rem;
+  gap: 0.35rem;
+}
+
+.mood-grid:not(.weather-grid) .mood-icon {
+  width: clamp(1.8rem, 6vw, 2.8rem);
+  height: clamp(1.8rem, 6vw, 2.8rem);
+}
+
+.mood-grid:not(.weather-grid) .mood-label {
+  font-size: clamp(0.7rem, 2.2vw, 0.9rem);
+}
+
+/* Weather step — always keep the four icons on a single row */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .weather-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Weather icons: monochrome SVGs tinted via currentColor (no background) */
+.weather-icon {
+  width: clamp(2.6rem, 8vw, 3.4rem);
+  height: clamp(2.6rem, 8vw, 3.4rem);
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.weather-icon--sunny {
+  -webkit-mask-image: url("/weather/sunny.svg");
+  mask-image: url("/weather/sunny.svg");
+}
+
+.weather-icon--cloudy {
+  -webkit-mask-image: url("/weather/cloudy.svg");
+  mask-image: url("/weather/cloudy.svg");
+}
+
+.weather-icon--rainy {
+  -webkit-mask-image: url("/weather/rainy.svg");
+  mask-image: url("/weather/rainy.svg");
+}
+
+.weather-icon--snowy {
+  -webkit-mask-image: url("/weather/snowy.svg");
+  mask-image: url("/weather/snowy.svg");
+}
+
+/* Mood icons: monochrome SVGs tinted via currentColor (no background) */
+.mood-icon {
+  width: clamp(2.6rem, 8vw, 3.4rem);
+  height: clamp(2.6rem, 8vw, 3.4rem);
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.mood-icon--happy {
+  -webkit-mask-image: url("/moods/happy.svg");
+  mask-image: url("/moods/happy.svg");
+}
+
+.mood-icon--sad {
+  -webkit-mask-image: url("/moods/sad.svg");
+  mask-image: url("/moods/sad.svg");
+}
+
+.mood-icon--romantic {
+  -webkit-mask-image: url("/moods/romantic.svg");
+  mask-image: url("/moods/romantic.svg");
+}
+
+.mood-icon--thrill {
+  -webkit-mask-image: url("/moods/thrill.svg");
+  mask-image: url("/moods/thrill.svg");
+}
+
+.mood-icon--chill {
+  -webkit-mask-image: url("/moods/chill.svg");
+  mask-image: url("/moods/chill.svg");
 }
 
 /* Results tab bar */
