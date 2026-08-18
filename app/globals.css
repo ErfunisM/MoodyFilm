@@ -948,7 +948,6 @@ input[type="number"].text-input::-webkit-inner-spin-button {
 }
 
 .movie-poster-wrap {
-  position: relative;
   aspect-ratio: 2 / 3;
   overflow: hidden;
   border: 1px solid var(--line);
