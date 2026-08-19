@@ -307,7 +307,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     newResults: "New picks",
     watchedResults: "Movies you've seen",
     moviePosterAlt: "{title} poster",
-    playTrailer: "Play trailer",
+    playTrailer: "Play Movie",
     closeTrailer: "Close",
     director: "Director",
     releaseYear: "Release year",

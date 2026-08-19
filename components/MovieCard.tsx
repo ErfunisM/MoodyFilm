@@ -231,7 +231,7 @@ export function MovieCard({
             <div className="trailer-frame">
               <iframe
                 title={movie.title}
-                src={movie.imdbId ? `https://nhdapi.com/movie/${movie.imdbId}` : ""}
+                src={movie.tmdbId ? `https://player.videasy.to/movie/${movie.tmdbId}` : ""}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
