@@ -95,6 +95,58 @@ Return ONLY valid JSON, no markdown, no commentary:
 { "titles": ["Matching Title 1"] }`;
 }
 
+const TRANSLATE_SYSTEM_PROMPT =
+  "You are a professional translator. Translate the movie plot into fluent, natural Persian (Farsi). Return only the translated plot text. No quotes, labels, titles, or commentary.";
+
+function hasPersianScript(text: string): boolean {
+  return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
+}
+
+/** Translate an English TMDB overview to Persian. Never returns Latin-only text. */
+export async function translateOverviewToFa(
+  english: string,
+): Promise<string | null> {
+  const source = english.trim();
+  if (!source) return null;
+
+  const apiKey = process.env.NARAROUTER_API_KEY;
+  const model = process.env.NARAROUTER_MODEL || "tencent-hy3";
+  if (!apiKey) return null;
+
+  try {
+    const response = await fetch(NARAROUTER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: TRANSLATE_SYSTEM_PROMPT },
+          { role: "user", content: source },
+        ],
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const json = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const raw = json.choices?.[0]?.message?.content?.trim();
+    if (!raw) return null;
+
+    const translated = raw.replace(/^["'«»]+|["'«»]+$/g, "").trim();
+    if (!translated || !hasPersianScript(translated)) return null;
+    if (translated === source) return null;
+
+    return translated;
+  } catch {
+    return null;
+  }
+}
+
 export async function filterRelevantWatched(
   data: RecommendRequest,
   candidates: CandidateWatchedMovie[],

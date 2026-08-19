@@ -1,3 +1,4 @@
+import { translateOverviewToFa } from "./nararouter.ts";
 import type { AiMovie, SuggestedMovie } from "./types.ts";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -92,6 +93,20 @@ function scoreMatch(candidate: TmdbSearchResult, movie: AiMovie): number {
   if ((candidate.vote_count ?? 0) >= 100) score += 3;
 
   return score;
+}
+
+function hasPersianScript(text: string): boolean {
+  return /[\u0600-\u06FF\u0750-\u077F]/.test(text);
+}
+
+function isValidPersianOverview(
+  text: string | null | undefined,
+  english: string | null,
+): text is string {
+  if (!text?.trim()) return false;
+  const trimmed = text.trim();
+  if (english && trimmed === english.trim()) return false;
+  return hasPersianScript(trimmed);
 }
 
 async function searchMovie(
@@ -196,7 +211,17 @@ export async function enrichMovies(
           searchMovie(movie, apiKey, "fa-IR"),
           fetchDetails(enMatch.id, apiKey),
         ]);
-        const overviewFa = faMatch?.overview || null;
+        const overview = enMatch.overview || null;
+        const tmdbOverviewFa = faMatch?.overview || null;
+        let overviewFa: string | null = isValidPersianOverview(
+          tmdbOverviewFa,
+          overview,
+        )
+          ? tmdbOverviewFa.trim()
+          : null;
+        if (!overviewFa && overview) {
+          overviewFa = await translateOverviewToFa(overview);
+        }
 
         // Prefer genres from detailed endpoint; fall back to search result genre_ids
         const genres =
@@ -224,7 +249,7 @@ export async function enrichMovies(
           posterUrl: enMatch.poster_path
             ? `${TMDB_IMAGE_BASE}${enMatch.poster_path}`
             : null,
-          overview: enMatch.overview || null,
+          overview,
           overviewFa,
           director: details.director,
           runtime: details.runtime,
