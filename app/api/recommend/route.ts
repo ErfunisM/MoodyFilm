@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { NaraRouterError, filterRelevantWatched } from "@/lib/nararouter";
+import {
+  NaraRouterError,
+  filterRelevantWatched,
+  generateProfileSummary,
+} from "@/lib/nararouter";
 import { enrichMovies } from "@/lib/tmdb";
 import { RecommendationAlgorithm } from "@/lib/algorithm/RecommendationAlgorithm";
+import { isStoryFilled } from "@/lib/storyText";
 import type {
   CandidateWatchedMovie,
   Company,
@@ -59,6 +64,11 @@ function parseBody(body: unknown): RecommendRequest {
   }
   if (!isOneOf(data.company, COMPANIES)) throw new Error("Invalid company");
 
+  const story = typeof data.story === "string" ? data.story : "";
+  if (!isStoryFilled(story)) {
+    throw new Error("Story note is required");
+  }
+
   const country =
     typeof data.country === "string" ? data.country.trim() : undefined;
   const city = typeof data.city === "string" ? data.city.trim() : undefined;
@@ -81,7 +91,7 @@ function parseBody(body: unknown): RecommendRequest {
     longitude: typeof data.longitude === "number" ? data.longitude : null,
     weather: (data.weather && isOneOf(data.weather, WEATHERS)) ? data.weather : "sunny",
     mood: data.mood,
-    story: typeof data.story === "string" ? data.story : "",
+    story: story.trim(),
     watchTime: data.watchTime,
     company: data.company,
     locale: data.locale === "fa" ? "fa" : "en",
@@ -123,10 +133,11 @@ export async function POST(request: Request) {
           : [],
       }));
 
-    // Run algorithm + watched-filter in parallel
-    const [movies, relevantTitles] = await Promise.all([
+    // Run algorithm + watched-filter + vibe summary in parallel
+    const [movies, relevantTitles, profileSummary] = await Promise.all([
       RecommendationAlgorithm.execute(payload),
       filterRelevantWatched(payload, candidateWatched),
+      generateProfileSummary(payload),
     ]);
 
     const enriched = await enrichMovies(movies, payload.locale);
@@ -166,7 +177,12 @@ export async function POST(request: Request) {
           : [],
       }));
 
-    return NextResponse.json({ movies: enriched, relevantWatched });
+    return NextResponse.json({
+      movies: enriched,
+      relevantWatched,
+      summary: profileSummary.summary,
+      storyMeaningful: profileSummary.storyMeaningful,
+    });
   } catch (error) {
     if (error instanceof NaraRouterError) {
       return NextResponse.json(

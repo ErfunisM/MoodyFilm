@@ -1,6 +1,6 @@
-## FilmChi
+## MoodyFilm
 
-FilmChi is a mood-based movie recommendation web app that helps you discover films tailored to how you feel, who you are with, and when you plan to watch. Answer a short guided wizard, and the app uses AI to suggest five movies matched to your profile — complete with posters and details from TMDB.
+MoodyFilm is a mood-based movie recommendation web app that helps you discover films tailored to how you feel, who you are with, and when you plan to watch. Answer a short guided wizard, and the app uses AI to suggest five movies matched to your profile — complete with posters and details from TMDB.
 
 Features
 

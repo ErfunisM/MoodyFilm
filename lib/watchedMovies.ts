@@ -1,6 +1,6 @@
 import type { SuggestedMovie } from "./types";
 
-const STORAGE_KEY = "filmchi-watched";
+const STORAGE_KEY = "moodyfilm-watched";
 
 export interface WatchedMovie {
   title: string;

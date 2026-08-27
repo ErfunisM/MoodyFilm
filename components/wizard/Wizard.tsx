@@ -13,9 +13,11 @@ import { GenderStep } from "@/components/wizard/GenderStep";
 import { LocationStep } from "@/components/wizard/LocationStep";
 import { MoodStep } from "@/components/wizard/MoodStep";
 import { StoryStep } from "@/components/wizard/StoryStep";
+import { SummaryModal } from "@/components/wizard/SummaryModal";
 import { WatchTimeStep } from "@/components/wizard/WatchTimeStep";
 import { WeatherStep } from "@/components/wizard/WeatherStep";
 import { isAgeInappropriate } from "@/lib/ageCheck";
+import { isStoryFilled } from "@/lib/storyText";
 import { getWatchedMovies } from "@/lib/watchedMovies";
 import type {
   Company,
@@ -71,6 +73,9 @@ export function Wizard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const [profileSummary, setProfileSummary] = useState("");
+  const [storyMeaningful, setStoryMeaningful] = useState(true);
 
   // "new" = new picks tab, "watched" = previously watched tab
   const [resultsTab, setResultsTab] = useState<"new" | "watched">("new");
@@ -125,6 +130,11 @@ export function Wizard() {
       return;
     }
 
+    if (!isStoryFilled(data.story)) {
+      setError(t.storyRequired);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -169,12 +179,21 @@ export function Wizard() {
       setRelevantWatched(json.relevantWatched ?? []);
       setWatchedIndex(0);
       setResultsTab("new");
-      
-      // Check if movies are age-inappropriate
+      const summaryText =
+        typeof json.summary === "string" && json.summary.trim()
+          ? json.summary.trim()
+          : locale === "fa"
+            ? "بر اساس انتخاب‌ها و یادداشتت، چند پیشنهاد آماده کردیم."
+            : "Based on your choices and note, we prepared a few picks.";
+      setProfileSummary(summaryText);
+      setStoryMeaningful(json.storyMeaningful !== false);
+      setShowSummary(true);
+
+      // Check if movies are age-inappropriate (shown after summary is dismissed)
       if (isAgeInappropriate(data.age, json.movies, data.story)) {
         setShowAgeWarning(true);
       }
-      
+
       goTo("results", "forward");
     } catch (err) {
       setError(err instanceof Error ? err.message : t.somethingWrong);
@@ -192,6 +211,9 @@ export function Wizard() {
     setResultsTab("new");
     setError(null);
     setShowAgeWarning(false);
+    setShowSummary(false);
+    setProfileSummary("");
+    setStoryMeaningful(true);
     setDirection("back");
     setAnimKey((k) => k + 1);
     setStep("gender");
@@ -213,24 +235,26 @@ export function Wizard() {
 
   const showPrev = step !== "results" && pathIndex > 0;
   const ageValid = data.age !== null && data.age >= 1 && data.age <= 120;
+  const storyValid = isStoryFilled(data.story);
   const showAgeNext = step === "age";
   const showStoryActions = step === "story";
   const showMoodNext = step === "mood";
   const showNav =
     step !== "results" &&
     (showPrev || showAgeNext || showStoryActions || showMoodNext);
+  const resultsBlurred = showSummary || showAgeWarning;
 
   return (
     <div className="wizard-shell" data-dir={dir}>
       <header className="brand-header">
         <div className="brand-row">
-          <div className="brand" aria-label="FilmChi">
+          <div className="brand" aria-label="MoodyFilm">
             <Image
               className="brand-image"
-              src="/FilmChi-Dark.png"
-              alt="FilmChi"
-              width={764}
-              height={252}
+              src="/moodyfilm-white-logo.png"
+              alt="MoodyFilm"
+              width={1080}
+              height={602}
               priority
             />
           </div>
@@ -248,7 +272,7 @@ export function Wizard() {
         ) : null}
       </header>
 
-      <main className={`wizard-main ${showAgeWarning ? "blurred-content" : ""}`}>
+      <main className={`wizard-main ${resultsBlurred ? "blurred-content" : ""}`}>
         {step !== "results" ? (
           <div
             key={`${step}-${animKey}`}
@@ -346,6 +370,7 @@ export function Wizard() {
                 movie={movies[movieIndex]}
                 index={movieIndex}
                 total={movies.length}
+                onPrev={() => setMovieIndex((i) => Math.max(i - 1, 0))}
                 onNext={() =>
                   setMovieIndex((i) => Math.min(i + 1, movies.length - 1))
                 }
@@ -357,6 +382,7 @@ export function Wizard() {
                 movie={watchedMovies[watchedIndex] as unknown as SuggestedMovie}
                 index={watchedIndex}
                 total={watchedMovies.length}
+                onPrev={() => setWatchedIndex((i) => Math.max(i - 1, 0))}
                 onNext={() =>
                   setWatchedIndex((i) => Math.min(i + 1, watchedMovies.length - 1))
                 }
@@ -389,7 +415,7 @@ export function Wizard() {
                   type="button"
                   className="primary-btn"
                   onClick={submitRecommendations}
-                  disabled={loading}
+                  disabled={loading || !storyValid}
                 >
                   {t.finish}
                 </button>
@@ -423,7 +449,15 @@ export function Wizard() {
         {error ? <p className="error-banner">{error}</p> : null}
       </main>
 
-      {showAgeWarning && (
+      {showSummary && profileSummary ? (
+        <SummaryModal
+          summary={profileSummary}
+          storyMeaningful={storyMeaningful}
+          onShow={() => setShowSummary(false)}
+        />
+      ) : null}
+
+      {showAgeWarning && !showSummary && (
         <AgeWarningModal
           onContinue={() => setShowAgeWarning(false)}
           onGoBack={restart}

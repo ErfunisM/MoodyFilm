@@ -1,4 +1,5 @@
 import type { CandidateWatchedMovie, RecommendRequest } from "./types.ts";
+import { looksLikeGibberish } from "./storyText.ts";
 
 const NARAROUTER_URL = "https://router.bynara.id/v1/chat/completions";
 
@@ -196,3 +197,252 @@ export async function filterRelevantWatched(
     return [];
   }
 }
+
+export interface ProfileSummaryResult {
+  summary: string;
+  storyMeaningful: boolean;
+}
+
+const LABEL_FA = {
+  gender: { female: "زن", male: "مرد" } as const,
+  mood: {
+    happy: "شاد",
+    sad: "غمگین",
+    romantic: "رمانتیک",
+    thrill: "هیجان",
+    chill: "آروم",
+  } as const,
+  weather: {
+    sunny: "آفتابی",
+    cloudy: "ابری",
+    rainy: "بارانی",
+    snowy: "برفی",
+  } as const,
+  watchTime: {
+    morning: "صبح",
+    afternoon: "بعدازظهر",
+    night: "شب",
+  } as const,
+  company: {
+    alone: "به‌تنهایی",
+    family: "با خانواده",
+    friends: "با دوستان",
+    partner: "با پارتنر",
+  } as const,
+};
+
+const LABEL_EN = {
+  gender: { female: "a woman", male: "a man" } as const,
+  mood: {
+    happy: "happy",
+    sad: "sad",
+    romantic: "romantic",
+    thrill: "thrilling",
+    chill: "chill",
+  } as const,
+  weather: {
+    sunny: "sunny",
+    cloudy: "cloudy",
+    rainy: "rainy",
+    snowy: "snowy",
+  } as const,
+  watchTime: {
+    morning: "morning",
+    afternoon: "afternoon",
+    night: "night",
+  } as const,
+  company: {
+    alone: "on your own",
+    family: "with family",
+    friends: "with friends",
+    partner: "with your partner",
+  } as const,
+};
+
+function buildSummaryFallback(
+  data: RecommendRequest,
+  storyMeaningful: boolean,
+): ProfileSummaryResult {
+  const locale = data.locale === "en" ? "en" : "fa";
+  const location =
+    data.locationLabel ||
+    [data.city, data.country].filter(Boolean).join(locale === "fa" ? "، " : ", ") ||
+    (locale === "fa" ? "مکان انتخاب‌شده" : "the place you selected");
+  const note = (data.story ?? "").trim();
+
+  if (locale === "fa") {
+    const mood = LABEL_FA.mood[data.mood];
+    const weather = LABEL_FA.weather[data.weather];
+    const when = LABEL_FA.watchTime[data.watchTime];
+    const company = LABEL_FA.company[data.company];
+
+    if (!storyMeaningful) {
+      return {
+        storyMeaningful: false,
+        summary: `بر اساس انتخاب‌های شما، زمان تماشا ${when} است، همراهی‌تان ${company} است، حال‌وهوایتان ${mood} است و هوا ${weather} گزارش شده است؛ مکان نیز ${location} است. اما توضیحی که نوشته‌اید مفهوم روشنی ندارد. به همین دلیل ممکن است فیلم‌های پیشنهادی چندان مناسب شما نباشند.`,
+      };
+    }
+
+    return {
+      storyMeaningful: true,
+      summary: `بر اساس انتخاب‌های شما، زمان تماشا ${when} است، همراهی‌تان ${company} است، حال‌وهوایتان ${mood} است و هوا ${weather} است؛ مکان نیز ${location} است. شما همچنین نوشته‌اید که ${note.slice(0, 180)}. به این دلایل، فیلم‌های زیر برای شما مناسب تشخیص داده شده‌اند تا با حال‌وهوا و توضیح شما هماهنگ باشند.`,
+    };
+  }
+
+  const mood = LABEL_EN.mood[data.mood];
+  const weather = LABEL_EN.weather[data.weather];
+  const when = LABEL_EN.watchTime[data.watchTime];
+  const company = LABEL_EN.company[data.company];
+
+  if (!storyMeaningful) {
+    return {
+      storyMeaningful: false,
+      summary: `Based on your choices, you plan to watch in the ${when}, ${company}, in a ${mood} mood, with ${weather} weather in ${location}. However, the note you wrote is not clear. For that reason, the suggested films may not be suitable for you.`,
+    };
+  }
+
+  return {
+    storyMeaningful: true,
+    summary: `Based on your choices, you plan to watch in the ${when}, ${company}, in a ${mood} mood, with ${weather} weather in ${location}. You also wrote that ${note.slice(0, 180)}. For these reasons, the films below were selected as suitable for you and aligned with your mood and note.`,
+  };
+}
+
+function buildSummaryPrompt(data: RecommendRequest): string {
+  const locale = data.locale === "en" ? "en" : "fa";
+  const location =
+    data.locationLabel ||
+    [data.city, data.country].filter(Boolean).join(", ") ||
+    "unspecified";
+  const note = (data.story ?? "").trim();
+
+  if (locale === "fa") {
+    return `یک متن کوتاه و ساده برای کاربر بنویس. لحن رسمی اما روان باشد؛ نه محاوره‌ای شکسته و نه رباتی عجیب.
+
+پروفایل:
+- جنسیت: ${data.gender}
+- سن: ${data.age}
+- مکان: ${location}
+- هوا: ${data.weather}
+- حال‌وهوا: ${data.mood}
+- زمان تماشا: ${data.watchTime}
+- همراه: ${data.company}
+- توضیح کاربر: """${note}"""
+
+storyMeaningful:
+- true = توضیح جمله واقعی و مفهوم‌دار است
+- false = حروف بی‌معنی یا متن نامفهوم است
+
+متن summary باید یک پاراگراف ساده باشد (۳ تا ۵ جمله) با این ساختار:
+1) اول انتخاب‌های کاربر را به زبان ساده و رسمی بیان کن (زمان، همراه، حال‌وهوا، هوا، مکان).
+2) اگر storyMeaningful=true، اشاره کوتاه و طبیعی به توضیح او بکن؛ سپس صریح بگو به این دلایل این فیلم‌ها برای او مناسب‌اند.
+3) اگر storyMeaningful=false، بگو توضیحش مفهوم نبود و ممکن است نتیجه مناسب نباشد.
+
+قواعد لحن:
+- فعل‌ها رسمی باشند (مثلاً می‌خواهید، نوشته‌اید، است) — از شکل‌های شکسته مثل می‌خوای، نوشتی، هستی، ه، چی تو سرته استفاده نکن.
+- بیان ساده و روشن؛ بدون استعاره عجیب، بدون لحن دوستانهٔ خیلی خودمانی، بدون عبارات کلیشه‌ای هوش مصنوعی.
+- بدون اسم فیلم، بدون بولت، بدون مارک‌داون.
+
+فقط JSON:
+{"storyMeaningful":true,"summary":"..."}`;
+  }
+
+  return `Write a short, plain summary for the user. Tone: formal but simple — not slangy, not oddly robotic.
+
+Profile:
+- Gender: ${data.gender}
+- Age: ${data.age}
+- Location: ${location}
+- Weather: ${data.weather}
+- Mood: ${data.mood}
+- Watch time: ${data.watchTime}
+- Company: ${data.company}
+- User note: """${note}"""
+
+storyMeaningful:
+- true = real meaningful note
+- false = gibberish / nonsense
+
+summary = one plain paragraph (3–5 sentences):
+1) First state their choices simply (when, company, mood, weather, place).
+2) If meaningful, briefly reflect their note, then clearly say: for these reasons, these films are suitable for them.
+3) If not meaningful, say the note was unclear and results may not fit.
+
+Tone rules: simple wording, formal verbs, no slang, no weird metaphors, no AI clichés, no movie titles, no markdown.
+
+Return ONLY JSON:
+{"storyMeaningful":true,"summary":"..."}`;
+}
+
+/** یک پاراگراف شرح حال شخصی + تشخیص معنادار بودن یادداشت کاربر */
+export async function generateProfileSummary(
+  data: RecommendRequest,
+): Promise<ProfileSummaryResult> {
+  // اگر هیوریستیک صریحاً نافهوم دید، به مدل اعتماد نکن که «معنادار» بگوید
+  const heuristicGibberish = looksLikeGibberish(data.story ?? "");
+  const apiKey = process.env.NARAROUTER_API_KEY;
+  const model = process.env.NARAROUTER_MODEL || "tencent-hy3";
+
+  if (!apiKey || heuristicGibberish) {
+    return buildSummaryFallback(data, !heuristicGibberish);
+  }
+
+  try {
+    const response = await fetch(NARAROUTER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You write short plain summaries in formal but simple language. No slang, no broken colloquial verbs, no weird metaphors. Always respond with valid JSON only.",
+          },
+          { role: "user", content: buildSummaryPrompt(data) },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      return buildSummaryFallback(data, true);
+    }
+
+    const json = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) {
+      return buildSummaryFallback(data, true);
+    }
+
+    const parsed = extractJson(content) as {
+      storyMeaningful?: unknown;
+      summary?: unknown;
+    };
+
+    let storyMeaningful =
+      typeof parsed.storyMeaningful === "boolean"
+        ? parsed.storyMeaningful
+        : true;
+
+    const summary =
+      typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+
+    // برای نافهوم همیشه متن ثابت و واضح خودمان را نشان بده
+    if (!storyMeaningful) {
+      return buildSummaryFallback(data, false);
+    }
+
+    if (!summary) {
+      return buildSummaryFallback(data, true);
+    }
+
+    return { summary, storyMeaningful: true };
+  } catch {
+    return buildSummaryFallback(data, !heuristicGibberish);
+  }
+}
+

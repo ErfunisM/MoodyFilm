@@ -12,6 +12,7 @@ interface MovieCardProps {
   index: number;
   total: number;
   onNext: () => void;
+  onPrev: () => void;
   onRestart: () => void;
   onMarkedWatched?: (movie: SuggestedMovie) => void;
 }
@@ -21,11 +22,13 @@ export function MovieCard({
   index,
   total,
   onNext,
+  onPrev,
   onRestart,
   onMarkedWatched,
 }: MovieCardProps) {
   const { t, locale } = useLocale();
   const isLast = index >= total - 1;
+  const isFirst = index <= 0;
   const [watched, setWatched] = useState(() => isWatched(movie.title));
   const [showDirectorName, setShowDirectorName] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -74,53 +77,94 @@ export function MovieCard({
 
   return (
     <section className="movie-reveal">
-      <div className="movie-poster-wrap">
-        {movie.posterUrl ? (
-          <Image
-            src={movie.posterUrl}
-            alt={formatMessage(t.moviePosterAlt, { title: movie.title })}
-            fill
-            className="movie-poster"
-            sizes="(max-width: 768px) 100vw, 480px"
-            priority
-          />
-        ) : (
-          <div className="poster-fallback">
-            <span>{movie.title}</span>
-          </div>
-        )}
-        {movie.imdbRating ? (
-          <div
-            className="imdb-badge"
-            dir="ltr"
-            aria-label={`IMDb ${movie.imdbRating.toFixed(1)}`}
+      <div className="movie-poster-column">
+        <div className="movie-poster-wrap">
+          {movie.posterUrl ? (
+            <Image
+              src={movie.posterUrl}
+              alt={formatMessage(t.moviePosterAlt, { title: movie.title })}
+              fill
+              className="movie-poster"
+              sizes="(max-width: 768px) 100vw, 480px"
+              priority
+            />
+          ) : (
+            <div className="poster-fallback">
+              <span>{movie.title}</span>
+            </div>
+          )}
+          {movie.imdbRating ? (
+            <div
+              className="imdb-badge"
+              dir="ltr"
+              aria-label={`IMDb ${movie.imdbRating.toFixed(1)}`}
+            >
+              <span className="imdb-badge__score">★ {movie.imdbRating.toFixed(1)}</span>
+              <span className="imdb-badge__label">IMDb</span>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className={`watched-btn watched-btn--poster ${watched ? "watched-btn--done" : ""}`}
+            onClick={handleMarkWatched}
+            disabled={watched}
           >
-            <span className="imdb-badge__score">★ {movie.imdbRating.toFixed(1)}</span>
-            <span className="imdb-badge__label">IMDb</span>
-          </div>
-        ) : null}
-        <button
-          type="button"
-          className={`watched-btn watched-btn--poster ${watched ? "watched-btn--done" : ""}`}
-          onClick={handleMarkWatched}
-          disabled={watched}
-        >
-          {watched ? t.alreadyWatched : t.markWatched}
-        </button>
-        <div className="poster-veil" />
-        <button
-          type="button"
-          className="poster-play"
-          onClick={() => setShowTrailer(true)}
-          aria-label={t.playTrailer}
-          title={t.playTrailer}
-        >
-          <span className="poster-play__icon" aria-hidden>
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
+            {watched ? t.alreadyWatched : t.markWatched}
+          </button>
+          <div className="poster-veil" />
+          <button
+            type="button"
+            className="poster-play"
+            onClick={() => setShowTrailer(true)}
+            aria-label={t.playTrailer}
+            title={t.playTrailer}
+          >
+            <span className="poster-play__icon" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        <div className="movie-nav-arrows" role="group">
+          <button
+            type="button"
+            className="movie-nav-arrow"
+            onClick={onPrev}
+            disabled={isFirst}
+            aria-label={t.previousMovie}
+            title={t.previousMovie}
+          >
+            <svg className="movie-nav-arrow__icon movie-nav-arrow__icon--prev" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M15 6 9 12l6 6"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-          </span>
-        </button>
+          </button>
+          <button
+            type="button"
+            className="movie-nav-arrow"
+            onClick={onNext}
+            disabled={isLast}
+            aria-label={t.nextMovie}
+            title={t.nextMovie}
+          >
+            <svg className="movie-nav-arrow__icon movie-nav-arrow__icon--next" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M9 6 15 12l-6 6"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="movie-copy">

@@ -41,12 +41,12 @@ function subscribeToLocaleChanges(callback: () => void) {
   const onCustomChange = () => callback();
 
   window.addEventListener("storage", onStorage);
-  window.addEventListener("filmchi-locale-change", onCustomChange as EventListener);
+  window.addEventListener("moodyfilm-locale-change", onCustomChange as EventListener);
 
   return () => {
     window.removeEventListener("storage", onStorage);
     window.removeEventListener(
-      "filmchi-locale-change",
+      "moodyfilm-locale-change",
       onCustomChange as EventListener,
     );
   };
@@ -72,7 +72,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   const setLocale = useCallback((next: Locale) => {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-    window.dispatchEvent(new Event("filmchi-locale-change"));
+    window.dispatchEvent(new Event("moodyfilm-locale-change"));
   }, []);
 
   const value = useMemo<LocaleContextValue>(

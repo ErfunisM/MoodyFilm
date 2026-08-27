@@ -76,10 +76,10 @@ function normalizeMovies(payload: unknown): AiMovie[] {
       seen.add(key);
       return true;
     })
-    .slice(0, 5);
+    .slice(0, 7);
 
-  if (normalized.length < 1) {
-    throw new Error("NaraRouter returned no valid movies");
+  if (normalized.length < 5) {
+    throw new Error("NaraRouter returned fewer than 5 movies");
   }
 
   return normalized;
@@ -429,7 +429,7 @@ export class RecommendationAlgorithm {
         ? insights.map((line) => `- ${line}`).join("\n")
         : "- No special factor interactions detected; treat the profile at face value.";
 
-    return `You are a movie recommendation expert. Suggest between 1 and 5 movies for this viewer.
+    return `You are a movie recommendation expert. Suggest exactly 5 movies for this viewer (you may return up to 7 if several fit equally well). Always return at least 5.
 
 Viewer profile:
 - Gender: ${data.gender}
@@ -455,7 +455,7 @@ Rules:
 - Every movie MUST be a real, released film. Never invent titles, years, or ratings.
 - Report the film's true IMDb rating. Only suggest films rated 7.0 or higher, unless the written request is narrow (specific actor, director, or niche genre) — then 6.5 is the floor.
 - Match the decision priority above. A film that satisfies a higher priority beats one that only satisfies lower ones.
-- Do NOT pad the list. Return 1-4 films if only that many genuinely fit. Quality over quantity.
+- Always return at least 5 distinct films that genuinely fit the profile. Prefer exactly 5; at most 7.
 - Do not repeat the same film twice.
 - Return ONLY valid JSON. No markdown, no commentary, no explanation outside the JSON.
 - The "reason" field must be: ${reasonInstruction}
@@ -531,8 +531,8 @@ Schema:
         (movie) => !seenSet.has(movie.title.toLowerCase()),
       );
 
-      if (unseen.length === 0) {
-        throw new Error("NaraRouter returned only already-seen movies");
+      if (unseen.length < 5) {
+        throw new Error("NaraRouter returned fewer than 5 unseen movies");
       }
 
       return unseen;

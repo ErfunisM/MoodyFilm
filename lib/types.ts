@@ -80,5 +80,7 @@ export interface CandidateWatchedMovie {
 export interface RecommendResponse {
   movies: SuggestedMovie[];
   relevantWatched: SuggestedMovie[];
+  summary: string;
+  storyMeaningful: boolean;
 }
 

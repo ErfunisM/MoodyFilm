@@ -1,7 +1,7 @@
 export type Locale = "fa" | "en";
 
 export const DEFAULT_LOCALE: Locale = "fa";
-export const LOCALE_STORAGE_KEY = "filmchi-locale";
+export const LOCALE_STORAGE_KEY = "moodyfilm-locale";
 
 export type Dictionary = {
   tagline: string;
@@ -72,6 +72,7 @@ export type Dictionary = {
   suggestionOf: string;
   startOver: string;
   nextMovie: string;
+  previousMovie: string;
   findNewPicks: string;
   completeRequired: string;
   recommendFailed: string;
@@ -97,13 +98,17 @@ export type Dictionary = {
   ageWarningText: string;
   ageWarningGoBack: string;
   ageWarningContinue: string;
+  storyRequired: string;
+  summaryShow: string;
+  summaryTitle: string;
+  summaryGibberishHint: string;
 };
 
 export const dictionaries: Record<Locale, Dictionary> = {
   fa: {
-    tagline: "هوشمندانه بهترین فیلم را برای حال‌وهوایت پیدا می‌کنیم",
+    tagline: "شاید بتونیم فیلمی رو بهت پیشنهاد بدیم که مناسب حال الانت باشه",
     whoWatching: "کی می‌خواد فیلم ببینه؟",
-    whoWatchingSub: "کمی از خودت بگو تا فیلمچی پیشنهادها را دقیق‌تر کند.",
+    whoWatchingSub: "کمی از خودت بگو تا مودی‌فیلم پیشنهادها را دقیق‌تر کند.",
     gender: "جنسیت",
     female: "زن",
     male: "مرد",
@@ -145,9 +150,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     adventurous: "ماجراجو",
     nostalgic: "نوستالژیک",
     anythingElse: "چیز دیگه‌ای هست؟",
-    anythingElseSub: "یک مقدار از حال و هوای خودت  بنویس تا پیشنهادهای بهتری داشته باشی (اختیاری)",
+    anythingElseSub:
+      "یک مقدار از حال و هوای خودت بنویس تا پیشنهادهای بهتری داشته باشی. این بخش اجباری است.",
     yourStory: "داستان تو",
     storyPlaceholder: "مثلاً روز سختی داشتم، چیزی گرم و بامزه می‌خوام…",
+    storyRequired: "لطفاً حداقل چند کلمه درباره حال‌وهوایت بنویس.",
     whenWithWhom: "کی و با کی؟",
     whenWithWhomSub: "چه زمانی میخوای فیلم تماشا کنی؟",
     watchTime: "زمان تماشا",
@@ -169,6 +176,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     suggestionOf: "پیشنهاد {current} از {total}",
     startOver: "شروع دوباره",
     nextMovie: "فیلم بعدی",
+    previousMovie: "فیلم قبلی",
     findNewPicks: "پیشنهادهای جدید",
     completeRequired: "لطفاً همه فیلدهای لازم را پر کن.",
     recommendFailed: "نتوانستیم پیشنهادی بگیریم",
@@ -194,6 +202,10 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ageWarningText: "برخی از فیلم‌های پیشنهادی ممکن است برای سن شما مناسب نباشند. آیا می‌خواهید ادامه دهید؟",
     ageWarningGoBack: "بازگشت",
     ageWarningContinue: "ادامه",
+    summaryTitle: "شرح حال تو",
+    summaryShow: "نمایش",
+    summaryGibberishHint:
+      "توضیحی که نوشته‌اید مفهوم روشنی ندارد؛ ممکن است این پیشنهادها برای شما مناسب نباشند.",
     countries: {
       "United States": "ایالات متحده",
       "United Kingdom": "بریتانیا",
@@ -223,9 +235,9 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
   },
   en: {
-    tagline: "We smartly find the perfect movie for your mood",
+    tagline: "Maybe we can suggest a movie that fits how you're feeling right now",
     whoWatching: "Who's watching?",
-    whoWatchingSub: "Tell us a little about you so Filmchi can tune the picks.",
+    whoWatchingSub: "Tell us a little about you so MoodyFilm can tune the picks.",
     gender: "Gender",
     female: "Female",
     male: "Male",
@@ -268,9 +280,10 @@ export const dictionaries: Record<Locale, Dictionary> = {
     nostalgic: "Nostalgic",
     anythingElse: "Anything else?",
     anythingElseSub:
-      "Optional — share a short story or mood detail to refine the picks.",
+      "Write a bit about how you feel so we can refine the picks. This step is required.",
     yourStory: "Your story",
     storyPlaceholder: "e.g. Long day at work, need something warm and funny…",
+    storyRequired: "Please write at least a few words about your mood.",
     whenWithWhom: "When & with whom?",
     whenWithWhomSub: "Time of day and company shape the right kind of film.",
     watchTime: "Watch time",
@@ -292,6 +305,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     suggestionOf: "Suggestion {current} of {total}",
     startOver: "Start over",
     nextMovie: "Next movie",
+    previousMovie: "Previous movie",
     findNewPicks: "Find new picks",
     completeRequired: "Please complete all required fields.",
     recommendFailed: "Could not get recommendations",
@@ -317,6 +331,10 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ageWarningText: "Some of the suggested movies may not be suitable for your age. Do you want to continue?",
     ageWarningGoBack: "Go back",
     ageWarningContinue: "Continue",
+    summaryTitle: "Your vibe check",
+    summaryShow: "Show",
+    summaryGibberishHint:
+      "The note you wrote is not clear; these suggestions may not be suitable for you.",
     countries: {
       "United States": "United States",
       "United Kingdom": "United Kingdom",
