@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { LocaleProvider } from "@/components/LocaleProvider";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const display = Bebas_Neue({
@@ -45,9 +44,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full antialiased">
-        <ThemeProvider>
-          <LocaleProvider>{children}</LocaleProvider>
-        </ThemeProvider>
+        <LocaleProvider>{children}</LocaleProvider>
       </body>
     </html>
   );

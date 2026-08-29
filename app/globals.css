@@ -21,6 +21,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --ink: #0c0a09;
   --ink-soft: #1c1917;
   --cream: #f5f0e8;
@@ -57,7 +58,6 @@
     linear-gradient(165deg, #140f0c 0%, #0c0a09 45%, #161210 100%);
   --font-fa: "IRANSansX", Tahoma, sans-serif;
   --grain-opacity: 0.045;
-  color-scheme: dark;
 }
 
 @theme inline {
