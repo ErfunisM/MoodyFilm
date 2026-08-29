@@ -672,6 +672,36 @@
   }
 }
 
+@media (max-width: 767.98px) {
+  .ca-nav__inner--no-cta {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 4.75rem;
+  }
+
+  .ca-brand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+  }
+
+  .ca-brand__logo {
+    height: clamp(4.6rem, 16vw, 5.9rem);
+  }
+
+  .ca-nav__locale {
+    position: absolute;
+    left: var(--ca-pad);
+    right: auto;
+    inset-inline: auto;
+    z-index: 2;
+    justify-self: auto;
+  }
+}
+
 @media (min-width: 1024px) {
   .ca-details__inner {
     grid-template-columns: 1fr 1fr;

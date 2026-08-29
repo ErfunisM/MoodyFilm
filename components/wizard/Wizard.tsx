@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { LocaleToggler } from "@/components/LocaleToggler";
 import { MovieCard } from "@/components/MovieCard";
@@ -11,6 +12,7 @@ import { AgeWarningModal } from "@/components/wizard/AgeWarningModal";
 import { CompanyStep } from "@/components/wizard/CompanyStep";
 import { GenderStep } from "@/components/wizard/GenderStep";
 import { LocationStep } from "@/components/wizard/LocationStep";
+import { ManagementPosterModal } from "@/components/wizard/ManagementPosterModal";
 import { MoodStep } from "@/components/wizard/MoodStep";
 import { StoryStep } from "@/components/wizard/StoryStep";
 import { SummaryModal } from "@/components/wizard/SummaryModal";
@@ -73,6 +75,7 @@ export function Wizard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAgeWarning, setShowAgeWarning] = useState(false);
+  const [showManagementPoster, setShowManagementPoster] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
   const [profileSummary, setProfileSummary] = useState("");
   const [storyMeaningful, setStoryMeaningful] = useState(true);
@@ -245,7 +248,10 @@ export function Wizard() {
   const resultsBlurred = showSummary || showAgeWarning;
 
   return (
-    <div className="wizard-shell" data-dir={dir}>
+    <div
+      className={`wizard-shell${showManagementPoster ? " wizard-shell--poster-open" : ""}`}
+      data-dir={dir}
+    >
       <header className="brand-header">
         <div className="brand-row">
           <div className="brand" aria-label="MoodyFilm">
@@ -259,6 +265,9 @@ export function Wizard() {
             />
           </div>
           <div className="header-controls">
+            <Link href="/managment" className="archive-soft-link">
+              {t.archiveSoftwareLink}
+            </Link>
             <LocaleToggler />
           </div>
         </div>
@@ -448,6 +457,12 @@ export function Wizard() {
 
         {error ? <p className="error-banner">{error}</p> : null}
       </main>
+
+      {showManagementPoster ? (
+        <ManagementPosterModal
+          onClose={() => setShowManagementPoster(false)}
+        />
+      ) : null}
 
       {showSummary && profileSummary ? (
         <SummaryModal

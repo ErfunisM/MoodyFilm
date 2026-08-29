@@ -102,6 +102,7 @@ export type Dictionary = {
   summaryShow: string;
   summaryTitle: string;
   summaryGibberishHint: string;
+  archiveSoftwareLink: string;
 };
 
 export const dictionaries: Record<Locale, Dictionary> = {
@@ -206,6 +207,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     summaryShow: "نمایش",
     summaryGibberishHint:
       "توضیحی که نوشته‌اید مفهوم روشنی ندارد؛ ممکن است این پیشنهادها برای شما مناسب نباشند.",
+    archiveSoftwareLink: "نرم‌افزار مدیریت آرشیو شخصی",
     countries: {
       "United States": "ایالات متحده",
       "United Kingdom": "بریتانیا",
@@ -335,6 +337,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     summaryShow: "Show",
     summaryGibberishHint:
       "The note you wrote is not clear; these suggestions may not be suitable for you.",
+    archiveSoftwareLink: "Personal archive manager",
     countries: {
       "United States": "United States",
       "United Kingdom": "United Kingdom",
