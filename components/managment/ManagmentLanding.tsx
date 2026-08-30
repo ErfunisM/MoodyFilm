@@ -7,9 +7,8 @@ import { LocaleToggler } from "@/components/LocaleToggler";
 import { useLocale } from "@/components/LocaleProvider";
 import "./managment.css";
 
-/** لینک‌های دانلود را بعداً اینجا بگذارید */
-const DOWNLOAD_WINDOWS_URL = "#";
-const DOWNLOAD_MAC_URL = "#";
+const DOWNLOAD_WINDOWS_URL = "/management/MoodyFilm-1.0.0.exe";
+const DOWNLOAD_MAC_URL = "/management/MoodyFilm-1.0.0.dmg";
 
 const SLIDES = [
   "/Management/1.png",
