@@ -10,5 +10,3 @@ Features
 - **Location-aware input** — choose your country and city manually, or use your current location
 - **Bilingual UI** — switch between Persian and English at any time
 - **One-at-a-time reveal** — browse five suggestions at your own pace with next and restart controls
-
-[Live Demo](https://filmchi-eight.vercel.app/)
