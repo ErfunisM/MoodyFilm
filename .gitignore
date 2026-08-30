@@ -20,3 +20,6 @@ yarn-error.log*
 __MACOSX/
 *.pem
 *.tsbuildinfo
+next-error.log
+passenger.log
+tmp/

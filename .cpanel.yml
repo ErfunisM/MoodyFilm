@@ -1,12 +1,10 @@
 ---
-# cPanel Git Version Control → Deploy HEAD
-# Application root باید /home/moodyfil/moodyfilm باشد و Node App از قبل ساخته شده باشد.
 deployment:
   tasks:
     - export HOME=/home/moodyfil
-    - export PATH=/home/moodyfil/nodevenv/moodyfilm/20/bin:/opt/alt/alt-nodejs20/root/usr/bin:$HOME/bin:$PATH
+    - export PATH=/home/moodyfil/nodevenv/moodyfilm/20/bin:/opt/alt/alt-nodejs20/root/usr/bin:$PATH
     - source /home/moodyfil/nodevenv/moodyfilm/20/bin/activate
-    - npm install
-    - npx next build --webpack
+    - npm install --include=dev
+    - npm run build
     - mkdir -p tmp
     - touch tmp/restart.txt
